@@ -77,9 +77,56 @@
 
 
 
-function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
-    ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial)
+function [t, posicao, velocidade, parado, dormindo, tempoareas, distperc, comportamento] = track(mostraresnatela, quadroini, quadrofim, fotos, video, pixelcm, nanimais, procframe, csvData, ...
+    corte, areas, areasexc, criavideores, viddiff, thresh, filt, handles, fundodinamico, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, cameralenta, trackmouse, liveTracking, trackindividuals, labels, labels_cov, actions, pinicial)
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %                           Inicializacoes
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Leitura do arquivo CSV
+    % csvData já foi passado como argumento, não precisa ser lido aqui
+
+    % Inicializar vetores de posição
+    x = cell(1, nanimais);
+    y = cell(1, nanimais);
+    t = csvData.timestamp';
+    
+    % Preencher posições a partir do CSV
+    for i = 1:height(csvData)
+        frame = csvData.frame(i);
+        x{1}(frame) = csvData.x1(i);
+        y{1}(frame) = csvData.y1(i);
+        if nanimais > 1
+            x{2}(frame) = csvData.x2(i);
+            y{2}(frame) = csvData.y2(i);
+        end
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %                       Calculo das velocidades
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    velocidade = cell(1, nanimais);
+
+    for i = 1:nanimais
+        vx = diff(x{i}) ./ diff(t);
+        vy = diff(y{i}) ./ diff(t);
+        velocidade{i}.x = [vx, vx(end)]; % Ajustar tamanho do vetor
+        velocidade{i}.y = [vy, vy(end)]; % Ajustar tamanho do vetor
+        velocidade{i}.total = sqrt(velocidade{i}.x.^2 + velocidade{i}.y.^2);
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %                       Armazenamento dos resultados
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    posicao = struct('x', x, 'y', y);
+
+    % Outras variáveis podem ser calculadas conforme necessário
+    % parado, dormindo, tempoareas, distperc, comportamento
+
+    % Continua com o resto do seu código
     %CONSTANTES A SEREM AJUSTADAS:
 
     %define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada
@@ -88,7 +135,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     maxpix = 0; %se o tamanho maximo for zero, fica sendo 50% da imagem
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %Informa se queremos trabalhar com a imagem colodira ou em tons de cinza
+    %Informa se queremos trabalhar com a imagem colorida ou em tons de cinza
     %1 - > colorida     0-> tons de cinza
     colorida = subcor;
 
@@ -102,13 +149,11 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     %TEMPO, em segundos, que o animal tem que ficar PARADO para se considerar que DORMIU
     tminparado = tempminparado;
 
-
-
     %threshold adaptativo
     global threshadaptativo;
 
     %variavel global para informar o frame atual para o gui
-    global  numframeatual;
+    global numframeatual;
 
     if ~exist('nanimais','var')
         nanimais=1;
@@ -146,10 +191,6 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 
     if ~exist('liveTracking','var')
         liveTracking = 0;
-    end
-
-    if ~exist('trackindividuals','var')
-        trackindividuals = 0;
     end
     V = zeros(handles.l,handles.c);
     %numero de QUADROS por SEGUNDO do video
@@ -262,8 +303,6 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         aviobj2=0;
         figvideodiff=0;
     end
-
-
     quadroini = floor(quadroini);
     %gera o vetor tempo, iniciando no tempo inicial da rastreio
     t = 1/fps*(quadroini-1:procframe:quadrofim-1);

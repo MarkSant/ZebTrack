@@ -25,7 +25,7 @@ function varargout = trackGUI(varargin)
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
-%
+
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
 % Edit the above text to modify the response to help trackGUI
@@ -118,11 +118,66 @@ handles.nactions = 0;
 for i=3:3*10+2
    eval(['set(handles.popupmenu' num2str(i) ',''Visible'',''off'');']);
 end
+
+% Create get CSV button
+uicontrol('Style', 'pushbutton', 'String', 'Obter de CSV', ...
+          'Position', [250, 550, 90, 25], ...
+          'Callback', @getCSVCallback);
+		  
+% Create get CSV button for areas of interest
+uicontrol('Style', 'pushbutton', 'String', 'Obter Áreas de Interesse CSV', ...
+          'Position', [350, 550, 150, 25], ...
+          'Callback', @getInterestCSVCallback);
+
+% Create text boxes and button for width and height in cm
+    handles.widthText = uicontrol('Style', 'edit', 'Position', [130, 510, 60, 20], 'String', '');
+    handles.heightText = uicontrol('Style', 'edit', 'Position', [200, 510, 60, 20], 'String', '');
+    handles.includeMeasuresButton = uicontrol('Style', 'pushbutton', 'String', 'Incluir medidas', ...
+                                              'Position', [270, 510, 100, 25], ...
+                                              'Callback', @includeMeasuresCallback);
+											  
+% Create get CSV button for animal positions
+    handles.loadCSVButton = uicontrol('Style', 'pushbutton', 'String', 'Carregar CSV', ...
+                                      'Position', [450, 550, 90, 25], ...
+                                      'Callback', @loadCSVCallback);
+
 % Update handles structure
 guidata(hObject, handles);
 
 % UIWAIT makes trackGUI wait for user response (see UIRESUME)
 uiwait(handles.figure1);
+end
+
+function includeMeasuresCallback(hObject, eventdata, handles)
+    width_cm = str2double(get(handles.widthText, 'String'));
+    height_cm = str2double(get(handles.heightText, 'String'));
+    
+    if isempty(handles.areaproc) || isempty(handles.areaproc.x)
+        msgbox('Por favor, forneça o arquivo CSV da área de processamento antes de prosseguir.', 'Erro', 'error');
+        return;
+    end
+    
+    if isnan(width_cm) || isnan(height_cm) || width_cm <= 0 || height_cm <= 0
+        msgbox('Por favor, insira valores válidos para a largura e altura.', 'Erro', 'error');
+        return;
+    end
+    
+    % Calcular a distância máxima no eixo X e Y na área de processamento
+    max_width_pixels = max(handles.areaproc.x) - min(handles.areaproc.x);
+    max_height_pixels = max(handles.areaproc.y) - min(handles.areaproc.y);
+    
+    % Calcular a calibração pixel/cm
+    pxcm_x = max_width_pixels / width_cm;
+    pxcm_y = max_height_pixels / height_cm;
+    
+    % Atualizar as caixas de texto de Pixel/cm
+    set(handles.pxcmx, 'String', num2str(pxcm_x));
+    set(handles.pxcmy, 'String', num2str(pxcm_y));
+    
+    % Desabilitar as caixas de texto de Pixel/cm
+    set(handles.pxcmx, 'Enable', 'off');
+    set(handles.pxcmy, 'Enable', 'off');
+end
 
 
 % --- Outputs from this function are returned to the command line.
@@ -137,6 +192,79 @@ varargout{1} = handles.e;
 varargout{2} = handles.directoryname;
 delete(handles.figure1);
 
+
+function getCSVCallback(hObject, eventdata)
+    [file, path] = uigetfile('*.csv', 'Selecione um arquivo CSV');
+    if isequal(file, 0)
+        disp('Usuário cancelou a seleção');
+    else
+        csvPath = fullfile(path, file);
+        coords = readtable(csvPath);
+        x_coords = coords{:, 1};
+        y_coords = coords{:, 2};
+        % Atualizar a área de processamento com as coordenadas do CSV
+        handles.areaproc.x = x_coords;
+        handles.areaproc.y = y_coords;
+        updateProcessingArea(handles, x_coords, y_coords);
+        % Desabilitar caixas de texto de x e y (ajuste os handles conforme necessário)
+        set(handles.x_input, 'Enable', 'off');
+        set(handles.y_input, 'Enable', 'off');
+    end
+end
+
+% --- Function to handle interest areas CSV
+function getInterestCSVCallback(hObject, eventdata)
+    [file, path] = uigetfile('*.csv', 'Selecione um arquivo CSV para Áreas de Interesse');
+    if isequal(file, 0)
+        disp('Usuário cancelou a seleção');
+    else
+        csvPath = fullfile(path, file);
+        coords = readtable(csvPath);
+        x_coords = coords{:, 1};
+        y_coords = coords{:, 2};
+        % Atualizar as áreas de interesse com as coordenadas do CSV
+        handles.areaint.x = x_coords;
+        handles.areaint.y = y_coords;
+        updateInterestArea(handles, x_coords, y_coords);
+        % Desabilitar caixas de texto de x e y para áreas de interesse
+        set(handles.x_interest_input, 'Enable', 'off');
+        set(handles.y_interest_input, 'Enable', 'off');
+    end
+end
+
+
+function updateProcessingArea(handles, x_coords, y_coords)
+    % Atualizar a área de processamento
+    axes(handles.axes4);
+    hold off;
+    fundohandle = imshow(handles.fundo);
+    set(fundohandle,'ButtonDownFcn', @axes4_ButtonDownFcn);
+    hold on;
+    plot(x_coords, y_coords, 'r');
+    fill(x_coords, y_coords, 'r', 'FaceAlpha', 0.3);
+    hold off;
+end
+
+% --- Function to update interest area
+function updateInterestArea(handles, x_coords, y_coords)
+    % Atualizar as áreas de interesse
+    axes(handles.axes4);
+    hold on;
+    plot(x_coords, y_coords, 'b');
+    fill(x_coords, y_coords, 'b', 'FaceAlpha', 0.3);
+end
+
+function loadCSVCallback(hObject, eventdata, handles)
+    [file, path] = uigetfile('*.csv', 'Selecione um arquivo CSV');
+    if isequal(file, 0)
+        disp('Usuário cancelou a seleção');
+    else
+        csvPath = fullfile(path, file);
+        handles.csvData = readtable(csvPath);
+        disp('Arquivo CSV carregado com sucesso');
+        guidata(hObject, handles);
+    end
+end
 
 function pasta_Callback(hObject, eventdata, handles)
 % hObject    handle to pasta (see GCBO)
@@ -808,13 +936,13 @@ if get(handles.splitexperiment,'Value')
         guidata(hObject, handles);
         if i==1
             [handles.e(i).t,handles.e(i).posicao,handles.e(i).velocidade,handles.e(i).parado,handles.e(i).dormindo,handles.e(i).tempoareas,handles.e(i).distperc,handles.e(i).comportamento]=...
-            track(visu,finitemp,ffimtemp,handles.directoryname,handles.video,pxcm,np,procf,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse,liveTracking,trackindividuals, centroids, cov_matrices, actions);
+            track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.csvData, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
         else
             pinicial.x(:,1) = px(:,end);
             pinicial.y(:,1) = py(:,end);
 
             [handles.e(i).t,handles.e(i).posicao,handles.e(i).velocidade,handles.e(i).parado,handles.e(i).dormindo,handles.e(i).tempoareas,handles.e(i).distperc,handles.e(i).comportamento]=...
-            track(visu,finitemp,ffimtemp,handles.directoryname,handles.video,pxcm,np,procf,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse,liveTracking,trackindividuals, centroids, cov_matrices, actions,pinicial);
+            track(visu,finitemp,ffimtemp,handles.directoryname,handles.video,pxcm,np,procf,handles.csvData,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse,liveTracking,trackindividuals, centroids, cov_matrices, actions);
         end
         
         if abort
@@ -824,7 +952,7 @@ if get(handles.splitexperiment,'Value')
     
 else
     [handles.e.t,handles.e.posicao,handles.e.velocidade,handles.e.parado,handles.e.dormindo,handles.e.tempoareas,handles.e.distperc,handles.e.comportamento]=...
-    track(visu,fini,ffim,handles.directoryname,handles.video,pxcm,np,procf,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse,liveTracking,trackindividuals, centroids, cov_matrices, actions);
+    track(visu,finitemp,ffimtemp,handles.directoryname,handles.video,pxcm,np,procf,handles.csvData,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse,liveTracking,trackindividuals, centroids, cov_matrices, actions);
     handles.e.areaproc=handles.areaproc;
     handles.e.pxcm = pxcm;
     handles.e.figdimensions.l = handles.l;
@@ -3754,7 +3882,7 @@ handles.directoryname = './live';
 set(handles.run,'Enable','on');
 set(handles.abortar,'Visible','on');
 
-%track(visu,fini,ffim,handles.directoryname,handles.video,pxcm,np,procf,handles.areaproc,handles.areaint,handles.areaexc,criavideores,mostradiff,thresh,filt,handles,fundodina,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,camlent,trackmouse);
+%track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.csvData, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
 
 handles.frameini=1;
 handles.framefim=20;
