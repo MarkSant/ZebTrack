@@ -378,11 +378,11 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         videoLive = videoinput('winvideo');
         triggerconfig(videoLive, 'manual');
         %cria um objeto videoinput, com o adptador e formatos suportados pelo
-        %hardware da maquina onde ser· executado o programa
+        %hardware da maquina onde ser√° executado o programa
         src = getselectedsource(videoLive);
         %videoLive.FramesPerTrigger = 300;
-        %definiÁ„o da quantidade de frames capturados para gerar o video que
-        %ser· usado para criaÁ„o do fundo
+        %defini√ß√£o da quantidade de frames capturados para gerar o video que
+        %ser√° usado para cria√ß√£o do fundo
         start(videoLive);
     end
     
