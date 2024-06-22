@@ -78,9 +78,29 @@
 
 
 function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
-    ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial)
+    ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial, csvPositionData)
 
     %CONSTANTES A SEREM AJUSTADAS:
+
+     % Verificação do parâmetro csvPositionData
+    if exist('csvPositionData', 'var') && ~isempty(csvPositionData)
+        disp('csvPositionData está presente e não está vazio.');
+        
+        % Adicione o código necessário para processar os dados do CSV
+        timestamps = csvPositionData.timestamp;
+        frames = csvPositionData.frame;
+        ax1 = csvPositionData.x1;
+        ay1 = csvPositionData.y1;
+        ax2 = csvPositionData.x2;
+        ay2 = csvPositionData.y2;
+        confidence = csvPositionData.confidence;
+    else
+        if ~exist('csvPositionData', 'var')
+            disp('csvPositionData não está presente.');
+        elseif isempty(csvPositionData)
+            disp('csvPositionData está presente, mas está vazio.');
+        end
+    end
 
     %define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada
     %um animal
@@ -410,32 +430,54 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 %     vetor_Ycores = [];
 %     indice_atual_medias = 1;
     
-     while i<=quadrofim
-        
-        %disp(['frame atual: ', num2str(i)])
+    while i <= quadrofim
 
-        %variavel global para informar o frame atual para o gui
-        numframeatual = i;
-        %frame = imread([fotos,'/frame',int2str(i), '.jpeg']);
+    % Variável global para informar o frame atual para o GUI
+    numframeatual = i;
 
-        if(liveTracking)
-           frame = getsnapshot(videoLive);
-           t(cont)=toc(ti);
-        else
-           frame = read(video,floor(i));
+    % Obter o frame atual
+    if liveTracking
+        frame = getsnapshot(videoLive);
+        t(cont) = toc(ti);
+    else
+        frame = read(video, floor(i));
+    end
+
+    % Converter para tons de cinza e double para trabalhar
+    if colorida || (cor == 1)
+        wframe = double(frame);
+    else
+        wframe = double(rgb2gray(frame));
+    end
+
+    % Verificar se csvPositionData está disponível
+    if isfield(handles, 'csvPositionData')
+        csvData = handles.csvPositionData;
+
+        % Encontrar o índice do frame mais próximo
+        [~, idx] = min(abs(csvData.frame - i));
+
+        % Verificar o frame anterior e o posterior
+        if idx > 1 && idx < height(csvData)
+            if abs(csvData.frame(idx - 1) - i) < abs(csvData.frame(idx) - i)
+                idx = idx - 1;
+            elseif abs(csvData.frame(idx + 1) - i) < abs(csvData.frame(idx) - i)
+                idx = idx + 1;
+            end
         end
 
-        %converte pra tons de cinza e double pra trabalhar
-        if colorida || (cor == 1)
-            wframe = double(frame);
-        else
-            wframe = double(rgb2gray(frame));
-        end
+        % Encontrar as coordenadas da bounding box para o frame mais próximo
+        ax1 = csvData.x1(idx);
+        ay1 = csvData.y1(idx);
+        ax2 = csvData.x2(idx);
+        ay2 = csvData.y2(idx);
 
-
-        %faz a diferenca so na area de interesse e extrai o centro de massas
-        %das regioes (blobs) maiores que minpix
-        [cx,cy,radius,boundingbox,ndetect,aviobj2,imdif] = extractnblobs(wframe,wbackg,Vrm,nanimais,mascara,minpix,maxpix,threshold,aviobj2,criavideodiff,tipsubfundo);
+        % Chamar extractnblobs com as coordenadas da bounding box
+        [cx, cy, radius, boundingbox, ndetect, aviobj2, imdif] = extractnblobs(wframe, wbackg, Vrm, nanimais, mascara, minpix, maxpix, threshold, aviobj2, criavideodiff, tipsubfundo, ax1, ay1, ax2, ay2);
+    else
+        % Chamar extractnblobs sem as coordenadas da bounding box
+        [cx, cy, radius, boundingbox, ndetect, aviobj2, imdif] = extractnblobs(wframe, wbackg, Vrm, nanimais, mascara, minpix, maxpix, threshold, aviobj2, criavideodiff, tipsubfundo);
+    end
 
         if threshadaptativo
             if ndetect < nanimais && threshold > 2 %ficara no minimo com 2

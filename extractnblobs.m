@@ -30,26 +30,128 @@
 
 
 
-function [cc,cr,radius,boundingbox,ndetect,avi,foremm, fore] = extractnblobs(Imwork,Imback,V,n,mascara,minpix,maxpix,tol,avi,criavideo,tipsubfundo)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Autor: Marcelo Borges Nogueira
+%Data: 05/07/2011
+%Descricao: extracts the center (cc,cr) and radius of the largest blobs
+%recebe a imagem de fundo Imback, a imagem atual Imwork, o numero de blobs
+%que desejamos detectar, o numero minimo de pixeis em um blob e a
+%toloerancia tol para determinar se um pixel eh pixel de blob ou nao
 
-cc=0;
-cr=0;
-radius=0;
-ndetect = 0;
-boundingbox = 0;
-
-[MR,MC,cor] = size(Imback);     %R == rolls, C == columns. aqui pega-se as dimensões do background.
-
-if maxpix == 0
-    maxpix = MR*MC/2;       % 50% da imagem
-end
-
-fore = zeros(MR,MC);
-
-colorida = (cor == 3);      %se for colorida retorna 1;
+%Inputs:
+% Imwork -> Frame atual
+% Imback -> wbackg que é o background;
+% V ->
+% n -> Número de animais a serem detectados (namimais);
+% mascara -> A mascara (região de interesse selecionada pelo usuário [é um array]);
+% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada de um animal.
+% tol -> tolerância/threshold;
+% avi -> aviobj2 que é o objeto de video diferença (não um vídeo!);
+% criavideo -> flag pra criar o video-diferença (criavideodiff);
+% tipsfundo -> flag que diz se há dicas na detecção no fundo;
 
 
-if tipsubfundo == 0
+%outputs:
+% cc, cr ->
+% radius ->
+% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 são as coordenadas do canto inferior esquerdo
+% das bounding boxes dos blobs ([h w] seriam as dimensões da bounding box enquanto matriz!);
+% ndetect ->
+% avi ->
+% foremm -> foreground com a mascara aplicada (fore & mascara) e pós operações morfológicas para eliminar blobs pequenos;
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Autor: Marcelo Borges Nogueira
+%Data: 05/07/2011
+%Descricao: extracts the center (cc,cr) and radius of the largest blobs
+%recebe a imagem de fundo Imback, a imagem atual Imwork, o numero de blobs
+%que desejamos detectar, o numero minimo de pixeis em um blob e a
+%toloerancia tol para determinar se um pixel eh pixel de blob ou nao
+
+%Inputs:
+% Imwork -> Frame atual
+% Imback -> wbackg que é o background;
+% V ->
+% n -> Número de animais a serem detectados (namimais);
+% mascara -> A mascara (região de interesse selecionada pelo usuário [é um array]);
+% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada de um animal.
+% tol -> tolerância/threshold;
+% avi -> aviobj2 que é o objeto de video diferença (não um vídeo!);
+% criavideo -> flag pra criar o video-diferença (criavideodiff);
+% tipsfundo -> flag que diz se há dicas na detecção no fundo;
+
+
+%outputs:
+% cc, cr ->
+% radius ->
+% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 são as coordenadas do canto inferior esquerdo
+% das bounding boxes dos blobs ([h w] seriam as dimensões da bounding box enquanto matriz!);
+% ndetect ->
+% avi ->
+% foremm -> foreground com a mascara aplicada (fore & mascara) e pós operações morfológicas para eliminar blobs pequenos;
+
+
+
+function [cc, cr, radius, boundingbox, ndetect, avi, foremm, fore] = extractnblobs(Imwork, Imback, V, n, mascara, minpix, maxpix, tol, avi, criavideo, tipsubfundo, ax1, ay1, ax2, ay2)
+    cc = 0;
+    cr = 0;
+    radius = 0;
+    ndetect = 0;
+    boundingbox = 0;
+
+    [MR, MC, cor] = size(Imback);
+
+    if maxpix == 0
+        maxpix = MR * MC / 2;
+    end
+
+    fore = zeros(MR, MC);
+    colorida = (cor == 3);
+
+    % Se coordenadas de bounding box forem fornecidas
+    if nargin == 13
+        labeled = zeros(MR, MC);
+        for k = 1:length(ax1)
+            % Extraia a subimagem dentro da bounding box
+            fore = Imwork(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), :);
+            Imback_sub = Imback(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), :);
+            subMask = mascara(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)));
+
+            % Subtracao de fundo dentro da bounding box
+            if tipsubfundo == 0
+                if ~colorida
+                    fore = abs(Imback_sub - fore) > tol;
+                else
+                    fore = (abs(fore(:,:,1) - Imback_sub(:,:,1)) > tol) | (abs(fore(:,:,2) - Imback_sub(:,:,2)) > tol) | (abs(fore(:,:,3) - Imback_sub(:,:,3)) > tol);
+                end
+            else
+                if ~colorida
+                    fore = abs(Imback_sub - fore) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 4);
+                else
+                    fore = (abs(fore(:,:,1) - Imback_sub(:,:,1)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 1)) ...
+                            | (abs(fore(:,:,2) - Imback_sub(:,:,2)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 2)) ...
+                            | (abs(fore(:,:,3) - Imback_sub(:,:,3)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 3));
+                end
+            end
+
+            % Aplicar a máscara na subimagem
+            fore = fore & subMask;
+
+            % Operações morfológicas na subimagem
+            radImopen = max(1, round(sqrt((ay2(k) - ay1(k)) * (ax2(k) - ax1(k)) / (720 * 480))));
+            foremm = imopen(fore, strel('disk', radImopen));
+            radBwmorph = max(2, round(sqrt((MR * MC) / (720 * 480)) * 3));
+            foremm = bwmorph(foremm, 'dilate', radBwmorph);
+
+            % Posicionar a subimagem processada na imagem original
+            labeled(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k))) = foremm;
+        end
+	stats = regionprops(labeled, ['basic']);
+    else
+        % Caso não receba coordenadas de bounding box, prossiga com a lógica original
+        if tipsubfundo == 0
     
     % subtracao de fundo basica: valor da diferença maior que threshold
     if ~colorida
@@ -143,16 +245,21 @@ for i=1:N
     end
 end
 selected = (labeled==id(1));
-
-
-%ndetect = min(n,cont); %get the ceter of mass of at most n blobs
-ndetect = cont;
-for i=1:ndetect
-    centroid = stats(i).Centroid;
-    radius(i) = sqrt(stats(i).Area/pi);
-    cc(i) = centroid(1);
-    cr(i) = centroid(2);
-    boundingbox(i,1:4) = stats(i).BoundingBox;
 end
 
-return
+    % Calcular propriedades dos blobs detectados
+    
+    if length(stats) > 0
+        ndetect = length(stats);
+        for i = 1:ndetect
+            centroid = stats(i).Centroid;
+            radius(i) = sqrt(stats(i).Area / pi);
+            cc(i) = centroid(1);
+            cr(i) = centroid(2);
+            boundingbox(i, 1:4) = stats(i).BoundingBox;
+        end
+    end
+
+    return
+end
+

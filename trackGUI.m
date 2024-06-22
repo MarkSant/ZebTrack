@@ -30,7 +30,7 @@ function varargout = trackGUI(varargin)
 
 % Edit the above text to modify the response to help trackGUI
 
-% Last Modified by GUIDE v2.5 21-Jun-2024 21:08:49
+% Last Modified by GUIDE v2.5 22-Jun-2024 09:49:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -800,9 +800,11 @@ if get(handles.splitexperiment,'Value')
         handles.framefim = ffimtemp;
         guidata(hObject, handles);
         if i == 1
+            
             [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
             track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
         else
+            
             pinicial.x(:,1) = px(:,end);
             pinicial.y(:,1) = py(:,end);
             [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
@@ -815,8 +817,9 @@ if get(handles.splitexperiment,'Value')
     end
     
 else
+    
     [handles.e.t, handles.e.posicao, handles.e.velocidade, handles.e.parado, handles.e.dormindo, handles.e.tempoareas, handles.e.distperc, handles.e.comportamento] = ...
-    track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
+    track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions, handles.csvPositionData);
     handles.e.areaproc = handles.areaproc;
     handles.e.pxcm = pxcm;
     handles.e.figdimensions.l = handles.l;
@@ -855,9 +858,9 @@ end
 
 % --- Executes on button press in csvPositionDataButton.
 function csvPositionDataButton_Callback(hObject, eventdata, handles)
-% hObject    handle to csvPositionDataButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+    % hObject    handle to csvPositionDataButton (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
 
     % Abrir a janela de seleção de arquivo
     [file, path] = uigetfile('*.csv', 'Select CSV file with Position Data');
@@ -870,6 +873,18 @@ function csvPositionDataButton_Callback(hObject, eventdata, handles)
         % Guardar os dados no handles
         handles.csvPositionData = csvPositionData;
         
+        % Calcular os intervalos entre os frames
+        frame_numbers = csvPositionData.frame;
+        frame_intervals = diff(frame_numbers);
+        
+        % Calcular a média dos intervalos
+        processing_rate = mean(frame_intervals);
+        
+        % Definir o valor de Processing Rate no handles
+        processing_rate_int = round(processing_rate);
+        proc_r = num2str(processing_rate_int);
+        set(handles.procframe, 'String', proc_r);
+
         % Atualiza a estrutura handles
         guidata(hObject, handles);
         
@@ -5045,10 +5060,3 @@ function btnSetPixelCm_Callback(hObject, eventdata, handles)
     % Atualizar a estrutura handles
     guidata(hObject, handles);
 end
-
-
-
-
-
-
-
