@@ -817,9 +817,19 @@ if get(handles.splitexperiment,'Value')
     end
     
 else
-    
+    disp('Estou aqui.');
+    if isfield(handles, 'csvPositionData')
+    csvPositionData = handles.csvPositionData;
+    else
+    csvPositionData = [];
+    end
+    disp('csvPositionData before calling track:');
+    disp(csvPositionData);
+    disp(size(csvPositionData));
+    pinicial = struct();
     [handles.e.t, handles.e.posicao, handles.e.velocidade, handles.e.parado, handles.e.dormindo, handles.e.tempoareas, handles.e.distperc, handles.e.comportamento] = ...
-    track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions, handles.csvPositionData);
+    track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions, pinicial, csvPositionData);
+
     handles.e.areaproc = handles.areaproc;
     handles.e.pxcm = pxcm;
     handles.e.figdimensions.l = handles.l;
@@ -827,6 +837,7 @@ else
     handles.e.directory = handles.directoryname;
     handles.e.areaint = handles.areaint;
     handles.e.filename = handles.filenameSemExtensao;
+    disp('aqui4');
 end
 
 try 
@@ -872,7 +883,8 @@ function csvPositionDataButton_Callback(hObject, eventdata, handles)
         
         % Guardar os dados no handles
         handles.csvPositionData = csvPositionData;
-        
+        disp('Carreguei csvPositionData');
+        disp(csvPositionData);
         % Calcular os intervalos entre os frames
         frame_numbers = csvPositionData.frame;
         frame_intervals = diff(frame_numbers);

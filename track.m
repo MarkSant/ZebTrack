@@ -78,10 +78,12 @@
 
 
 function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
-    ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial, csvPositionData)
+    ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial,csvPositionData)
 
     %CONSTANTES A SEREM AJUSTADAS:
-
+    disp('csvPositionData inside track:');
+    disp(csvPositionData);
+    disp(size(csvPositionData));
      % Verificação do parâmetro csvPositionData
     if exist('csvPositionData', 'var') && ~isempty(csvPositionData)
         disp('csvPositionData está presente e não está vazio.');
@@ -649,7 +651,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         else %primeira iteracao
             %se tiver recebido a posicao inicial dos animais, simplesmente
             %atribui elas
-            if exist('pinicial','var')
+            if ~exist('pinicial','var') 
                 if length(pinicial.x)==nanimais
                     px(:,cont)=pinicial.x;
                     py(:,cont)=pinicial.y;
