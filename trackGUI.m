@@ -696,217 +696,187 @@ end
 
 % --- Executes on button press in run.
 function run_Callback(hObject, eventdata, handles)
-    % hObject    handle to run (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-    toggleTooltips(handles.figure1, 'off');
-    visu = 1;
-    if ~handles.live
-        handles.frameini = floor((str2double(get(handles.tinimin, 'String')) * 60 + str2double(get(handles.tiniseg, 'String'))) * handles.frameRate + 1);
-        handles.framefim = floor((str2double(get(handles.tfimmin, 'String')) * 60 + str2double(get(handles.tfimseg, 'String'))) * handles.frameRate);
-    end
-    fini = handles.frameini;
-    ffim = handles.framefim;
-    np = str2double(get(handles.npeixes, 'String'));
-    pxcm.x = str2double(get(handles.pxcmx, 'String'));
-    pxcm.y = str2double(get(handles.pxcmy, 'String'));
-    if ~handles.live
-        procf = str2double(get(handles.procframe, 'String'));
-    else
-        procf = 1;
-    end
-    criavideores = get(handles.resvideo, 'Value');
-    mostradiff = get(handles.checkbox2, 'Value');
-    tipsubfundo = get(handles.radiosfe, 'Value');
-    thresh = round(get(handles.slider3, 'Value'));
-    filt = get(handles.slider4, 'Value');
-    tipfilt = get(handles.radiofk, 'Value');
-    fundodina = get(handles.fundodinamico, 'Value');
-    subcor = get(handles.subtracaocolorida, 'Value');
-    velmin = str2double(get(handles.vminima, 'String'));
-    tempmin = str2double(get(handles.tminparado, 'String'));
-    tempminparado = str2double(get(handles.tmindormindo, 'String'));
-    camlent = str2double(get(handles.cameralenta, 'String'));
-    trackmouse = get(handles.trackmouse, 'Value');
-    liveTracking = handles.live;
-    trackindividuals = get(handles.checkboxTrack_Ind, 'Value');
-    if trackindividuals
-        try
-            centroids = handles.centroids;
-            cov_matrices = handles.cov_matrices;
-        catch
-            msgbox('Generate Feature Dataset First!', 'Erro', 'error');
-            return;
-        end
-    else
-        centroids = [];
-        cov_matrices = [];
-    end
-    actions.nactions = handles.nactions;
-    if actions.nactions > 0
-        ind = get(handles.serialports, 'Value');
-        str = get(handles.serialports, 'String');
-        tmp = str(ind);
-        actions.serialport = tmp{1};
-
-        ind = get(handles.popupmenu2, 'Value');
-        str = get(handles.popupmenu2, 'String');
-        tmp = str(ind);
-        actions.serialspeed = str2num(tmp{1});
-
-        for i = 1:actions.nactions
-            eval(['actions.condition(i) = get(handles.popupmenu' num2str(3 * i) ',''Value'');']);
-            eval(['actions.area(i) = get(handles.popupmenu' num2str(3 * i + 1) ',''Value'');']);
-            eval(['actions.command(i) = get(handles.popupmenu' num2str(3 * i + 2) ',''Value'');']);
-        end
-    end
-
-    set(handles.run, 'Visible', 'off');
-    set(handles.abortar, 'Visible', 'on');
-    set(handles.pause, 'Enable', 'on');
-    handles.waibar.setvalue(0);
-    global abort;
-    abort = 0;
-    global pausar;
-    pausar = 0;
-    set(handles.pause, 'Enable', 'on');
-    global nulitimospontos;
-    nulitimospontos = str2double(get(handles.rastro, 'String'));
-    set(handles.mensagem, 'String', 'If the tracking process looses the animal, click on it to help its detection');
-    set(handles.mensagem, 'Visible', 'on');
-    global px;
-    global py;
-
-    if trackmouse
-        set(handles.figure1, 'WindowButtonMotionFcn', @trackmousemovment);
-    end
-
-    if get(handles.splitexperiment, 'Value')
-        splitframe = str2double(get(handles.splittime, 'String')) * handles.frameRate;
-        set(handles.expnumber, 'Visible', 'on');
-        handles.e(1).areaproc = handles.areaproc;
-        handles.e(1).pxcm = pxcm;
-        handles.e(1).figdimensions.l = handles.l;
-        handles.e(1).figdimensions.c = handles.c;
-        handles.e(1).directory = handles.directoryname;
-        handles.e(1).filename = handles.filenameSemExtensao;
-        handles.e(1).areaint = handles.areaint;
-
-        for i = 1:ceil((ffim - fini) / splitframe)
-            set(handles.expnumber, 'String', ['Experiment number ' num2str(i) ' of ' num2str(ceil((ffim - fini) / splitframe))]);
-            finitemp = fini + (i - 1) * splitframe;
-            ffimtemp = min(fini + (i) * splitframe, ffim);
-            handles.frameini = finitemp;
-            handles.framefim = ffimtemp;
-            guidata(hObject, handles);
-            if i == 1
-                [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
-                track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
-            else
-                pinicial.x(:, 1) = px(:, end);
-                pinicial.y(:, 1) = py(:, end);
-                [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
-                track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
-            end
-
-            if abort
-                break;
-            end
-        end
-
-    else
-        if isfield(handles, 'csvPositionData')
-            csvPositionData = handles.csvPositionData;
-            frames = csvPositionData.frame;
-            timestamps = csvPositionData.timestamp;
-            x1 = csvPositionData.x1;
-            y1 = csvPositionData.y1;
-            x2 = csvPositionData.x2;
-            y2 = csvPositionData.y2;
-            confidence = csvPositionData.confidence;
-
-            % Inicializa as estruturas para armazenar os resultados
-            t = timestamps';
-            posicao.x = [x1, x2]';
-            posicao.y = [y1, y2]';
-            % Preenche outras variáveis de resultado com valores vazios ou zeros
-            velocidade = [];
-            parado = [];
-            dormindo = [];
-            tempoareas = [];
-            distperc = [];
-            comportamento = [];
-
-            % Atualiza a estrutura handles
-            handles.e.t = t;
-            handles.e.posicao = posicao;
-            handles.e.velocidade = velocidade;
-            handles.e.parado = parado;
-            handles.e.dormindo = dormindo;
-            handles.e.tempoareas = tempoareas;
-            handles.e.distperc = distperc;
-            handles.e.comportamento = comportamento;
-            handles.e.areaproc = handles.areaproc;
-            handles.e.pxcm = pxcm;
-            handles.e.figdimensions.l = handles.l;
-            handles.e.figdimensions.c = handles.c;
-            handles.e.directory = handles.directoryname;
-            handles.e.areaint = handles.areaint;
-                       handles.e.filename = handles.filenameSemExtensao;
-
-            % Finaliza o processamento e salva os resultados
-            e = handles.e; % Extraia a estrutura relevante para salvar
-            save(fullfile(handles.directoryname, [handles.filenameSemExtensao '.mat']), 'e');
-            set(handles.mensagem, 'String', ['Result automatically saved to "' handles.filenameSemExtensao '.mat"']);
-        else
-            [handles.e.t, handles.e.posicao, handles.e.velocidade, handles.e.parado, handles.e.dormindo, handles.e.tempoareas, handles.e.distperc, handles.e.comportamento] = ...
-            track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
-            handles.e.areaproc = handles.areaproc;
-            handles.e.pxcm = pxcm;
-            handles.e.figdimensions.l = handles.l;
-            handles.e.figdimensions.c = handles.c;
-            handles.e.directory = handles.directoryname;
-            handles.e.areaint = handles.areaint;
-            handles.e.filename = handles.filenameSemExtensao;
-            
-            % Salva apenas a estrutura relevante para evitar grandes tamanhos de arquivo
-            e = handles.e;
-            save(fullfile(handles.directoryname, [handles.filenameSemExtensao '.mat']), 'e');
-        end
-    end
-
+% hObject    handle to run (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+toggleTooltips(handles.figure1,'off'); 
+visu = 1;
+if ~handles.live
+    handles.frameini = floor((str2double(get(handles.tinimin,'String'))*60 + str2double(get(handles.tiniseg,'String')))*handles.frameRate + 1);
+    handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
+end
+fini = handles.frameini;
+ffim = handles.framefim;
+np = str2double(get(handles.npeixes,'String'));
+pxcm.x = str2double(get(handles.pxcmx,'String')); 
+pxcm.y = str2double(get(handles.pxcmy,'String')); 
+if ~handles.live
+    procf = str2double(get(handles.procframe,'String')); 
+else
+    procf=1;
+end
+criavideores = get(handles.resvideo,'Value'); 
+mostradiff = get(handles.checkbox2,'Value');
+tipsubfundo = get(handles.radiosfe,'Value');
+thresh = round(get(handles.slider3,'Value'));
+filt = get(handles.slider4,'Value');
+tipfilt = get(handles.radiofk,'Value');
+fundodina = get(handles.fundodinamico,'Value');
+subcor = get(handles.subtracaocolorida,'Value');
+velmin = str2double(get(handles.vminima,'String')); 
+tempmin = str2double(get(handles.tminparado,'String')); 
+tempminparado = str2double(get(handles.tmindormindo,'String'));
+camlent = str2double(get(handles.cameralenta,'String'));
+trackmouse = get(handles.trackmouse,'Value');
+liveTracking = handles.live;
+trackindividuals = get(handles.checkboxTrack_Ind,'Value'); 
+if trackindividuals 
     try
-        load aleluia
-        sound(aleluia)
+        centroids = handles.centroids;
+        cov_matrices = handles.cov_matrices;
     catch
+        msgbox('Generate Feature Dataset First! ','Erro','error');
+        return;
     end
-
-    set(handles.expnumber, 'Visible', 'off');
-    if isfield(handles, 'figure1')
-        set(handles.figure1, 'WindowButtonMotionFcn', '');
+else
+    centroids = [];
+    cov_matrices = [];
+end
+actions.nactions = handles.nactions;
+if actions.nactions > 0
+    ind = get(handles.serialports,'Value');
+    str = get(handles.serialports,'String');
+    tmp = str(ind);
+    actions.serialport = tmp{1};
+    
+    ind = get(handles.popupmenu2,'Value');
+    str = get(handles.popupmenu2,'String');
+    tmp = str(ind);
+    actions.serialspeed = str2num(tmp{1});
+    
+    for i = 1:actions.nactions
+        eval(['actions.condition(i) = get(handles.popupmenu' num2str(3*i) ',''Value'');']);
+        eval(['actions.area(i) = get(handles.popupmenu' num2str(3*i+1) ',''Value'');']);
+        eval(['actions.command(i) = get(handles.popupmenu' num2str(3*i+2) ',''Value'');']);
     end
-
-    set(handles.run, 'Enable', 'on');
-    set(handles.run, 'Visible', 'on');
-    set(handles.abortar, 'Visible', 'off');
-    set(handles.saveres, 'Enable', 'on');
-    set(handles.splitres, 'Enable', 'on');
-    set(handles.saveresexcel, 'Enable', 'on');
-    set(handles.saveresword, 'Enable', 'on');
-    set(handles.selrepitems, 'Enable', 'on');
-    set(handles.viewrep, 'Enable', 'on');
-    toggleTooltips(handles.figure1, 'on');
-    set(handles.pause, 'Enable', 'off');
-
-    % Salva automaticamente os resultados
-    e = handles.e;
-    save(fullfile(handles.directoryname, [handles.filenameSemExtensao '.mat']), 'e');
-    set(handles.mensagem, 'String', ['Result automatically saved to "' handles.filenameSemExtensao '.mat"']);
-
-    guidata(hObject, handles);
 end
 
+set(handles.run,'Visible','off');
+set(handles.abortar,'Visible','on');
+set(handles.pause,'Enable','on');
+handles.waibar.setvalue(0);
+global abort;
+abort = 0;
+global pausar;
+pausar = 0;
+set(handles.pause,'Enable','on');
+global nulitimospontos;
+nulitimospontos = str2double(get(handles.rastro,'String'));
+set(handles.mensagem,'String','If the tracking process looses the animal, click on it to help its detection');
+set(handles.mensagem,'Visible','on');
+global px;
+global py;
 
+if trackmouse
+    set(handles.figure1,'WindowButtonMotionFcn', @trackmousemovment);
+end
+
+if get(handles.splitexperiment,'Value')
+    splitframe = str2double(get(handles.splittime,'String'))*handles.frameRate;
+    set(handles.expnumber,'Visible','on');
+    handles.e(1).areaproc = handles.areaproc;
+    handles.e(1).pxcm = pxcm;
+    handles.e(1).figdimensions.l = handles.l;
+    handles.e(1).figdimensions.c = handles.c;
+    handles.e(1).directory = handles.directoryname;
+    handles.e(1).filename = handles.filenameSemExtensao;
+    handles.e(1).areaint = handles.areaint;
+    
+    for i = 1:ceil((ffim - fini) / splitframe)
+        set(handles.expnumber,'String',['Experiment number ' num2str(i) ' of ' num2str(ceil((ffim - fini) / splitframe))]);
+        finitemp = fini + (i - 1) * splitframe;
+        ffimtemp = min(fini + (i) * splitframe, ffim);
+        handles.frameini = finitemp;
+        handles.framefim = ffimtemp;
+        guidata(hObject, handles);
+        if i == 1
+            [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
+            track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
+        else
+            pinicial.x(:,1) = px(:,end);
+            pinicial.y(:,1) = py(:,end);
+            [handles.e(i).t, handles.e(i).posicao, handles.e(i).velocidade, handles.e(i).parado, handles.e(i).dormindo, handles.e(i).tempoareas, handles.e(i).distperc, handles.e(i).comportamento] = ...
+            track(visu, finitemp, ffimtemp, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
+        end
+        
+        if abort
+            break;
+        end
+    end
+    
+else
+    [handles.e.t, handles.e.posicao, handles.e.velocidade, handles.e.parado, handles.e.dormindo, handles.e.tempoareas, handles.e.distperc, handles.e.comportamento] = ...
+    track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions);
+    handles.e.areaproc = handles.areaproc;
+    handles.e.pxcm = pxcm;
+    handles.e.figdimensions.l = handles.l;
+    handles.e.figdimensions.c = handles.c;
+    handles.e.directory = handles.directoryname;
+    handles.e.areaint = handles.areaint;
+    handles.e.filename = handles.filenameSemExtensao;
+end
+
+try 
+    load aleluia
+    sound(aleluia)
+catch
+end
+
+set(handles.expnumber,'Visible','off');
+set(handles.figure1,'WindowButtonMotionFcn', '');
+set(handles.run,'Enable','on');
+set(handles.run,'Visible','on');
+set(handles.abortar,'Visible','off');
+set(handles.saveres,'Enable','on');
+set(handles.splitres,'Enable','on');
+set(handles.saveresexcel,'Enable','on');
+set(handles.saveresword,'Enable','on');
+set(handles.selrepitems,'Enable','on');
+set(handles.viewrep,'Enable','on');
+toggleTooltips(handles.figure1,'on'); 
+set(handles.pause,'Enable','off');
+
+e = handles.e;
+save(fullfile(handles.directoryname, [handles.filenameSemExtensao '.mat']), 'e');
+set(handles.mensagem,'String',['Result automatically saved to "' handles.filenameSemExtensao '.mat"']);
+
+guidata(hObject, handles);
+end
+
+% --- Executes on button press in csvPositionDataButton.
+function csvPositionDataButton_Callback(hObject, eventdata, handles)
+% hObject    handle to csvPositionDataButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+    % Abrir a janela de seleção de arquivo
+    [file, path] = uigetfile('*.csv', 'Select CSV file with Position Data');
+    if isequal(file, 0)
+        disp('User selected Cancel');
+    else
+        fullpath = fullfile(path, file);
+        csvPositionData = readtable(fullpath);
+        
+        % Guardar os dados no handles
+        handles.csvPositionData = csvPositionData;
+        
+        % Atualiza a estrutura handles
+        guidata(hObject, handles);
+        
+        % Chamar a função run_Callback diretamente para iniciar o processamento
+        run_Callback(hObject, eventdata, handles);
+    end
+end
 
 
 function apxi_Callback(hObject, eventdata, handles)
@@ -5077,31 +5047,7 @@ function btnSetPixelCm_Callback(hObject, eventdata, handles)
 end
 
 
-% --- Executes on button press in csvPositionDataButton.
 
-function csvPositionDataButton_Callback(hObject, eventdata, handles)
-% hObject    handle to csvPositionDataButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-    % Abrir a janela de seleção de arquivo
-    [file, path] = uigetfile('*.csv', 'Select CSV file with Position Data');
-    if isequal(file, 0)
-        disp('User selected Cancel');
-    else
-        fullpath = fullfile(path, file);
-        csvPositionData = readtable(fullpath);
-        
-        % Guardar os dados no handles
-        handles.csvPositionData = csvPositionData;
-        
-        % Atualiza a estrutura handles
-        guidata(hObject, handles);
-        
-        % Chamar a função run_Callback diretamente para iniciar o processamento
-        run_Callback(hObject, eventdata, handles);
-    end
-end
 
 
 

@@ -18,7 +18,7 @@
 %   dormindo: vetor com estrutura - tempo inicial, tempo final e
 %           posicao inicial e final em que cada animal esteve dormindo
 %   tempoareas: matriz com estrutura - tempo inicial e tempo final em que
-%           um certo animal esteve dentro de cada ?rea informada na entrada
+%           um certo animal esteve dentro de cada área informada na entrada
 %   distperc: vetor com a distancia percorrida total de cada peixe (em cm)
 %   comportamento: vetor com estrutura - tipo (codigo numerico) do comportamento atual,
 %           tempo inicial, tempo final e posicao inicial e final de cada
@@ -31,7 +31,7 @@
 %           processados
 %   fotos: caminho onde se encontra o  video e onde serao salbos os resultados.
 %   video: objeto de video com o video do experimento
-%   pixelcm: estrutura com campos x e y que informa a rela??o
+%   pixelcm: estrutura com campos x e y que informa a relação
 %           pixel-centimetro (em pixels por centimetro)
 %   nanimais: numero de animais que queremos detectar
 %   procframe: processar 1 a cada procframe
@@ -57,11 +57,11 @@
 %   velmin: velocidade minima, em cm/s, para que um animal seja considerado parado
 %   tempmin: tempo minimo, em segundos, para que um animal com velocidade
 %           abaixo de velmin seja considerado parado
-%   tempminparado: tempo m?nimo parado, em segundos, para que seja
+%   tempminparado: tempo mínimo parado, em segundos, para que seja
 %           considerado que esta dormindo
 %   subcor: usar imagem colorida na subtracao de fundo: 0 -> imagem tons de
 %           cinza  1 -> imagem colorida
-%   cameralenta: indica, em segundos, o valor de pausa entre a exibi??o de
+%   cameralenta: indica, em segundos, o valor de pausa entre a exibição de
 %           cada processamento
 %   trackmouse: indica se o programa ira apenas rastrear o mouse
 %   
@@ -71,8 +71,8 @@
 %   animal 
 %   labels = vetor de caracteristicas de cada animal
 %  labels_cov = matriz de covariancia dos labels
-%   actions: conjunto de a??es para envio para hardware externo
-%   pinicial: posi??o inicial do peixe
+%   actions: conjunto de ações para envio para hardware externo
+%   pinicial: posição inicial do peixe
 
 
 
@@ -80,11 +80,9 @@
 function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
     ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial)
 
-    
-
     %CONSTANTES A SEREM AJUSTADAS:
 
-    %define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma ?rea para ser considerada
+    %define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada
     %um animal
     minpix = 2;
     maxpix = 0; %se o tamanho maximo for zero, fica sendo 50% da imagem
@@ -217,7 +215,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         backg = imread('./live/live.jpeg');
     end
 
-    [l,c,cor] = size(backg);    %Pegando as dimens?es do meu fundo.
+    [l,c,cor] = size(backg);    %Pegando as dimensões do meu fundo.
 
     if colorida || (cor == 1)
         wbackg = double(backg);
@@ -270,7 +268,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     %gera o vetor tempo, iniciando no tempo inicial da rastreio
     t = 1/fps*(quadroini-1:procframe:quadrofim-1);
 
-    %aloca espa?o para px e py para aumentar velocidade
+    %aloca espaço para px e py para aumentar velocidade
     global px;
     global py;
     px=zeros(nanimais,floor((quadrofim-quadroini)/procframe));
@@ -364,7 +362,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     cont = 1;
 
     Vrm =  V.^.5;
-    %garante que todo mundo em Vrm eh no m?nimo 0.5
+    %garante que todo mundo em Vrm eh no mínimo 0.5
     Vrm(Vrm<0.5) = 0.5;
 
 
@@ -378,11 +376,11 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         videoLive = videoinput('winvideo');
         triggerconfig(videoLive, 'manual');
         %cria um objeto videoinput, com o adptador e formatos suportados pelo
-        %hardware da maquina onde será executado o programa
+        %hardware da maquina onde serÃ¡ executado o programa
         src = getselectedsource(videoLive);
         %videoLive.FramesPerTrigger = 300;
-        %definição da quantidade de frames capturados para gerar o video que
-        %será usado para criação do fundo
+        %definiÃ§Ã£o da quantidade de frames capturados para gerar o video que
+        %serÃ¡ usado para criaÃ§Ã£o do fundo
         start(videoLive);
     end
     
@@ -460,7 +458,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         end
 
 
-        %vetor que ir? decorar cada animal que ja foi associado a um blob
+        %vetor que irá decorar cada animal que ja foi associado a um blob
         detectado=zeros(1,nanimais);
 
 
@@ -490,9 +488,9 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                                                   INTENSO);
                 %}
                 avg_vector = blob_colours_2(frame, boundingbox, ndetect...
-                                                    ,imdif, 0.15,0.5); % avg_vector ? o novo vetor_cores_atuais
+                                                    ,imdif, 0.15,0.5); % avg_vector é o novo vetor_cores_atuais
                 %definindo um valor para alpha:
-                alpha_distancia = 0;    %20% para a dist?ncia euclidiana e 80% para a dist?ncia no espa?o de cores.
+                alpha_distancia = 0;    %20% para a distância euclidiana e 80% para a distância no espaço de cores.
                
                 
                 %{
@@ -501,7 +499,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                                                                           vetor_cores_atuais, media, variancia, ...
                                                                           alpha_distancia);
                 %}                                                      
-                %centroides = [72.8047 22.3412 30.9006; 23.3055 25.0995 57.2719]% definir na m?o antes de rodar o c?digo                                                      
+                %centroides = [72.8047 22.3412 30.9006; 23.3055 25.0995 57.2719]% definir na mão antes de rodar o código                                                      
                 [px(:,cont),py(:,cont),detectado,caixa] =  associacao_soma_matrizes(nanimais, ndetect,avg_vector,centroides,cx,cy, px(:,cont-1), py(:,cont-1),l,c,detectado,caixa, boundingbox);                                                      
 %                     vetor_Ximagem(indice_atual_medias) = Ximagem;
 %                     vetor_Yimagem(indice_atual_medias) = Yimagem;
@@ -533,7 +531,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
             %filtragem das posicoes
             for k=1:nanimais
                 if tipfilt == 0
-                    %m?dia m?vel
+                    %média móvel
                     px(k,cont)=alpha*px(k,cont) + (1-alpha)*px(k,cont-1);
                     py(k,cont)=alpha*py(k,cont) + (1-alpha)*py(k,cont-1);
                 end
@@ -576,7 +574,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                     %procura qual letra foi
                     for indletra = 1:length(vetorletras)
                         if tecla == vetorletras(indletra)
-                            %testa se ? diferente do comportamento atual
+                            %testa se é diferente do comportamento atual
                             if comportamento.tipo(contcomportamento) ~= indletra %novo comportamento
                                 %fecha comportamento atual
                                 comportamento.tf(contcomportamento) = t(cont-1);
@@ -685,7 +683,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                 parado{j}.yi(contparado(j)) = (l-py(j,cont))/pixelcm.y;
             end
 
-            %teste se j? esta mai de tminparado segundos parado, pra mudar
+            %teste se já esta mai de tminparado segundos parado, pra mudar
             %a cor do plot
             if indparado(j)
                 if t(cont) - parado{j}.ti(contparado(j)) > tminparado
@@ -963,13 +961,13 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         end
      end
      
-%      figure ('Name','Gr?fico da m?dia de dist?ncias euclidianas e cores')
+%      figure ('Name','Gráfico da média de distâncias euclidianas e cores')
 %      plot (vetor_Ximagem,vetor_Yimagem,'k*',vetor_Xcores,vetor_Ycores,'r*')
 %      legend ('Euclidiana', 'Cores')
-%      figure ('Name','Gr?fico da m?dia de dist?ncias euclidianas')
+%      figure ('Name','Gráfico da média de distâncias euclidianas')
 %      plot (vetor_Ximagem,vetor_Yimagem,'k*')
 %      legend ('Euclidiana')
-%      figure ('Name','Gr?fico da m?dia de dist?ncias de cores')
+%      figure ('Name','Gráfico da média de distâncias de cores')
 %      plot (vetor_Xcores,vetor_Ycores,'r*')
 %      legend ('Cores')
      
@@ -980,7 +978,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         fclose(serialcom);
      end
 
-    %verifica se tinha gente parado que ficou parado at? o final do
+    %verifica se tinha gente parado que ficou parado até o final do
     %rastreamento
     for j=1:nanimais
         %se terminou o rastreamento e continua parado
@@ -1154,7 +1152,7 @@ end
 
 
 %calcula os termos da seria da filtragem considerando deslocamentos iguais
-%entre espa?os de tempo iguais
+%entre espaços de tempo iguais
 function y = calctermoserie(n,i)
     if i == 1
         y = sum(1:n);
@@ -1217,8 +1215,3 @@ function clickfigura(hObject, eventdata, handles)
         %    display('ajeitar posicao antiga')
     end
 end
-
-
-
-
-
