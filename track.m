@@ -81,9 +81,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial,csvPositionData)
 
     %CONSTANTES A SEREM AJUSTADAS:
-    disp('csvPositionData inside track:');
-    disp(csvPositionData);
-    disp(size(csvPositionData));
+    
      % Verificação do parâmetro csvPositionData
     if exist('csvPositionData', 'var') && ~isempty(csvPositionData)
         disp('csvPositionData está presente e não está vazio.');
@@ -287,6 +285,8 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 
 
     quadroini = floor(quadroini);
+    disp('quadroini')
+    disp(quadroini);
     %gera o vetor tempo, iniciando no tempo inicial da rastreio
     t = 1/fps*(quadroini-1:procframe:quadrofim-1);
 
@@ -433,6 +433,8 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 %     indice_atual_medias = 1;
     
     while i <= quadrofim
+        disp('i=');
+        disp(i);
 
     % Variável global para informar o frame atual para o GUI
     numframeatual = i;
@@ -443,6 +445,8 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         t(cont) = toc(ti);
     else
         frame = read(video, floor(i));
+        
+        
     end
 
     % Converter para tons de cinza e double para trabalhar
@@ -455,29 +459,26 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     % Verificar se csvPositionData está disponível
     if isfield(handles, 'csvPositionData')
         csvData = handles.csvPositionData;
-
+        
         % Encontrar o índice do frame mais próximo
         [~, idx] = min(abs(csvData.frame - i));
-
-        % Verificar o frame anterior e o posterior
-        if idx > 1 && idx < height(csvData)
-            if abs(csvData.frame(idx - 1) - i) < abs(csvData.frame(idx) - i)
-                idx = idx - 1;
-            elseif abs(csvData.frame(idx + 1) - i) < abs(csvData.frame(idx) - i)
-                idx = idx + 1;
-            end
-        end
-
-        % Encontrar as coordenadas da bounding box para o frame mais próximo
-        ax1 = csvData.x1(idx);
-        ay1 = csvData.y1(idx);
-        ax2 = csvData.x2(idx);
-        ay2 = csvData.y2(idx);
+        disp('idx=');
+        disp(idx);
+    
+        % Pegar a linha de csvData que contém o valor de frame mais próximo
+        linhaProxima = csvData(idx, :);
+    
+        % Pega as coordenadas da bounding box do frame mais próximo
+        ax1 = linhaProxima.x1;
+        ay1 = linhaProxima.y1;
+        ax2 = linhaProxima.x2;
+        ay2 = linhaProxima.y2;
 
         % Chamar extractnblobs com as coordenadas da bounding box
         [cx, cy, radius, boundingbox, ndetect, aviobj2, imdif] = extractnblobs(wframe, wbackg, Vrm, nanimais, mascara, minpix, maxpix, threshold, aviobj2, criavideodiff, tipsubfundo, ax1, ay1, ax2, ay2);
     else
         % Chamar extractnblobs sem as coordenadas da bounding box
+        
         [cx, cy, radius, boundingbox, ndetect, aviobj2, imdif] = extractnblobs(wframe, wbackg, Vrm, nanimais, mascara, minpix, maxpix, threshold, aviobj2, criavideodiff, tipsubfundo);
     end
 

@@ -512,7 +512,9 @@ if filename ~= 0
     
     %disp(['numero de frames ' num2str(handles.video.NumberOfFrames)])
     handles.frameRate = handles.video.NumberOfFrames/handles.video.Duration;
-    
+    disp(handles.frameRate);
+    disp(handles.video.NumberOfFrames);
+    disp(handles.video.Duration);
     %barras de roalgem do video
     set(handles.sliderti,'Min',1);
     set(handles.slidertf,'Min',handles.frameRate);
@@ -703,10 +705,12 @@ toggleTooltips(handles.figure1,'off');
 visu = 1;
 if ~handles.live
     handles.frameini = floor((str2double(get(handles.tinimin,'String'))*60 + str2double(get(handles.tiniseg,'String')))*handles.frameRate + 1);
-    handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
+        handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
 end
 fini = handles.frameini;
+disp(fini);
 ffim = handles.framefim;
+disp(ffim);
 np = str2double(get(handles.npeixes,'String'));
 pxcm.x = str2double(get(handles.pxcmx,'String')); 
 pxcm.y = str2double(get(handles.pxcmy,'String')); 
@@ -817,15 +821,12 @@ if get(handles.splitexperiment,'Value')
     end
     
 else
-    disp('Estou aqui.');
+    
     if isfield(handles, 'csvPositionData')
     csvPositionData = handles.csvPositionData;
     else
     csvPositionData = [];
     end
-    disp('csvPositionData before calling track:');
-    disp(csvPositionData);
-    disp(size(csvPositionData));
     pinicial = struct();
     [handles.e.t, handles.e.posicao, handles.e.velocidade, handles.e.parado, handles.e.dormindo, handles.e.tempoareas, handles.e.distperc, handles.e.comportamento] = ...
     track(visu, fini, ffim, handles.directoryname, handles.video, pxcm, np, procf, handles.areaproc, handles.areaint, handles.areaexc, criavideores, mostradiff, thresh, filt, handles, fundodina, tipfilt, tipsubfundo, velmin, tempmin, tempminparado, subcor, camlent, trackmouse, liveTracking, trackindividuals, centroids, cov_matrices, actions, pinicial, csvPositionData);
@@ -837,7 +838,7 @@ else
     handles.e.directory = handles.directoryname;
     handles.e.areaint = handles.areaint;
     handles.e.filename = handles.filenameSemExtensao;
-    disp('aqui4');
+    
 end
 
 try 
@@ -883,8 +884,7 @@ function csvPositionDataButton_Callback(hObject, eventdata, handles)
         
         % Guardar os dados no handles
         handles.csvPositionData = csvPositionData;
-        disp('Carreguei csvPositionData');
-        disp(csvPositionData);
+        
         % Calcular os intervalos entre os frames
         frame_numbers = csvPositionData.frame;
         frame_intervals = diff(frame_numbers);

@@ -95,171 +95,155 @@
 
 
 function [cc, cr, radius, boundingbox, ndetect, avi, foremm, fore] = extractnblobs(Imwork, Imback, V, n, mascara, minpix, maxpix, tol, avi, criavideo, tipsubfundo, ax1, ay1, ax2, ay2)
-    cc = 0;
-    cr = 0;
-    radius = 0;
-    ndetect = 0;
-    boundingbox = 0;
+cc = 0;
+cr = 0;
+radius = 0;
+ndetect = 0;
+boundingbox = [];
 
-    [MR, MC, cor] = size(Imback);
+[MR, MC, cor] = size(Imback);
 
-    if maxpix == 0
-        maxpix = MR * MC / 2;
+if maxpix == 0
+    maxpix = MR * MC / 2;
+end
+
+fore = zeros(MR, MC);
+colorida = (cor == 3);
+disp('aqui7');
+% Se coordenadas de bounding box forem fornecidas
+if nargin == 15
+    labeled = zeros(MR, MC);
+
+    for k = 1:length(ax1)
+        % Registra as bounding boxes diretamente
+        boundingbox(k, :) = [ax1(k), ay1(k), ax2(k) - ax1(k), ay2(k) - ay1(k)];
+
+        % Define os pontos centrais (centroides) a partir das coordenadas da bounding box
+        cc(k) = (ax1(k) + ax2(k)) / 2;
+        cr(k) = (ay1(k) + ay2(k)) / 2;
+
+        % Define o raio como sendo metade da medida do menor lado do retângulo
+        radius(k) = min((ax2(k) - ax1(k)), (ay2(k) - ay1(k))) / 2;
+
+        % Marca a região na imagem binária
+        labeled(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k))) = 1;
     end
 
-    fore = zeros(MR, MC);
-    colorida = (cor == 3);
-
-    % Se coordenadas de bounding box forem fornecidas
-    if nargin == 13
-        labeled = zeros(MR, MC);
-        for k = 1:length(ax1)
-            % Extraia a subimagem dentro da bounding box
-            fore = Imwork(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), :);
-            Imback_sub = Imback(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), :);
-            subMask = mascara(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)));
-
-            % Subtracao de fundo dentro da bounding box
-            if tipsubfundo == 0
-                if ~colorida
-                    fore = abs(Imback_sub - fore) > tol;
-                else
-                    fore = (abs(fore(:,:,1) - Imback_sub(:,:,1)) > tol) | (abs(fore(:,:,2) - Imback_sub(:,:,2)) > tol) | (abs(fore(:,:,3) - Imback_sub(:,:,3)) > tol);
-                end
-            else
-                if ~colorida
-                    fore = abs(Imback_sub - fore) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 4);
-                else
-                    fore = (abs(fore(:,:,1) - Imback_sub(:,:,1)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 1)) ...
-                            | (abs(fore(:,:,2) - Imback_sub(:,:,2)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 2)) ...
-                            | (abs(fore(:,:,3) - Imback_sub(:,:,3)) > tol * V(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k)), 3));
-                end
-            end
-
-            % Aplicar a máscara na subimagem
-            fore = fore & subMask;
-
-            % Operações morfológicas na subimagem
-            radImopen = max(1, round(sqrt((ay2(k) - ay1(k)) * (ax2(k) - ax1(k)) / (720 * 480))));
-            foremm = imopen(fore, strel('disk', radImopen));
-            radBwmorph = max(2, round(sqrt((MR * MC) / (720 * 480)) * 3));
-            foremm = bwmorph(foremm, 'dilate', radBwmorph);
-
-            % Posicionar a subimagem processada na imagem original
-            labeled(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k))) = foremm;
-        end
-	stats = regionprops(labeled, ['basic']);
-    else
-        % Caso não receba coordenadas de bounding box, prossiga com a lógica original
-        if tipsubfundo == 0
-    
-    % subtracao de fundo basica: valor da diferença maior que threshold
-    if ~colorida
-        fore = abs(Imback - Imwork) > tol;
-    else
-        fore = (abs(Imwork(:,:,1) - Imback(:,:,1)) > tol) | (abs(Imwork(:,:,2) - Imback(:,:,2)) > tol) | (abs(Imwork(:,:,3) - Imback(:,:,3)) > tol);
-    end
-    
+    ndetect = length(ax1);  % Número de blobs detectados
+    foremm = labeled;  % A imagem processada é simplesmente a imagem binária gerada
+    stats = regionprops(labeled, ['basic']);
 else
-    
-    % subtracao de fundo gaussiana: valor da diferença maior que
-    % threshhold*raiz(variancia) para cada pixel
-    if ~colorida
-        fore = abs(Imback - Imwork) > tol*V(:,:,4);
-    else
-        fore = (abs(Imwork(:,:,1)-Imback(:,:,1)) > tol*V(:,:,1)) ...
-            | (abs(Imwork(:,:,2) - Imback(:,:,2)) > tol*V(:,:,2)) ...
-            | (abs(Imwork(:,:,3) - Imback(:,:,3)) > tol*V(:,:,3));
-    end
-    
-end
+    % Caso não receba coordenadas de bounding box, prossiga com a lógica original
+    disp('aqui8');
+    if tipsubfundo == 0
 
-
-%fzer um AND com a mascara
-fore = fore & mascara;
-
-% Morphology Operation  erode to remove small noise
-%foremm = bwmorph(fore,'erode',2);
-%foremm = bwmorph(foremm,'dilate',5);
-
-%foremm = bwmorph(fore,'open',2);
-
-%change the size of the elements of morphological operations based on image
-%size. The base will be 720x480 images
-
-ImArea = MR*MC;
-mult = sqrt(ImArea/(720*480)); %since we specify radius below, root the multiplier
-radImopen = max(1,round(mult*1));
-radBwmorph = max(2,round(mult*3));
-
-foremm = imopen(fore,strel('disk',radImopen));%erosion followed by a dilation
-foremm = bwmorph(foremm,'dilate',radBwmorph);%dilate even more to join adjacent blobs
-
-%remover operacoes morfologicas
-%foremm = fore;
-
-if criavideo
-    %figure(h);
-    junto = 255*foremm;
-    imhandle = imshow(junto);
-    set(imhandle,'ButtonDownFcn',@clickfigura );
-    writeVideo(avi,uint8(junto));
-end
-
-% separete the objects found
-labeled = bwlabel(foremm,8); %conectividade 8
-
-stats = regionprops(labeled,['basic']);%basic mohem nist (only relevant information here: Area, centroid coordinates and Bounding box coordinates);
-[N,W] = size(stats);                   %N-> número de blobs;
-if N < 1 %|| n>N %se nao achou nenhum ou achou menos que o pedido a função acaba;
-    return
-end
-
-% do bubble sort (large to small) on regions in case there are more than 1
-id = zeros(N);
-for i = 1 : N
-    id(i) = i;
-end
-for i = 1 : N-1
-    for j = i+1 : N
-        if stats(i).Area < stats(j).Area
-            tmp = stats(i);
-            stats(i) = stats(j);
-            stats(j) = tmp;
-            tmp = id(i);
-            id(i) = id(j);
-            id(j) = tmp;
+        % subtracao de fundo basica: valor da diferença maior que threshold
+        if ~colorida
+            fore = abs(Imback - Imwork) > tol;
+        else
+            fore = (abs(Imwork(:,:,1) - Imback(:,:,1)) > tol) | (abs(Imwork(:,:,2) - Imback(:,:,2)) > tol) | (abs(Imwork(:,:,3) - Imback(:,:,3)) > tol);
         end
-    end
-end
 
-
-% conta quantos blobs tem mais que minpix e menos que maxpix
-%falta remover os maiores que maxpix
-cont=0;
-for i=1:N
-    if stats(i).Area > minpix && stats(i).Area < maxpix
-        cont=cont+1;
     else
-        break;
-    end
-end
-selected = (labeled==id(1));
-end
 
-    % Calcular propriedades dos blobs detectados
-    
-    if length(stats) > 0
-        ndetect = length(stats);
-        for i = 1:ndetect
-            centroid = stats(i).Centroid;
-            radius(i) = sqrt(stats(i).Area / pi);
-            cc(i) = centroid(1);
-            cr(i) = centroid(2);
-            boundingbox(i, 1:4) = stats(i).BoundingBox;
+        % subtracao de fundo gaussiana: valor da diferença maior que
+        % threshhold*raiz(variancia) para cada pixel
+        if ~colorida
+            fore = abs(Imback - Imwork) > tol*V(:,:,4);
+        else
+            fore = (abs(Imwork(:,:,1)-Imback(:,:,1)) > tol*V(:,:,1)) ...
+                | (abs(Imwork(:,:,2) - Imback(:,:,2)) > tol*V(:,:,2)) ...
+                | (abs(Imwork(:,:,3) - Imback(:,:,3)) > tol*V(:,:,3));
+        end
+
+    end
+
+
+    %fzer um AND com a mascara
+    fore = fore & mascara;
+
+    % Morphology Operation  erode to remove small noise
+    %foremm = bwmorph(fore,'erode',2);
+    %foremm = bwmorph(foremm,'dilate',5);
+
+    %foremm = bwmorph(fore,'open',2);
+
+    %change the size of the elements of morphological operations based on image
+    %size. The base will be 720x480 images
+
+    ImArea = MR*MC;
+    mult = sqrt(ImArea/(720*480)); %since we specify radius below, root the multiplier
+    radImopen = max(1,round(mult*1));
+    radBwmorph = max(2,round(mult*3));
+
+    foremm = imopen(fore,strel('disk',radImopen));%erosion followed by a dilation
+    foremm = bwmorph(foremm,'dilate',radBwmorph);%dilate even more to join adjacent blobs
+
+    %remover operacoes morfologicas
+    %foremm = fore;
+
+    if criavideo
+        %figure(h);
+        junto = 255*foremm;
+        imhandle = imshow(junto);
+        set(imhandle,'ButtonDownFcn',@clickfigura );
+        writeVideo(avi,uint8(junto));
+    end
+
+    % separete the objects found
+    labeled = bwlabel(foremm,8); %conectividade 8
+
+    stats = regionprops(labeled,['basic']);%basic mohem nist (only relevant information here: Area, centroid coordinates and Bounding box coordinates);
+    [N,W] = size(stats);                   %N-> número de blobs;
+    if N < 1 %|| n>N %se nao achou nenhum ou achou menos que o pedido a função acaba;
+        return
+    end
+
+    % do bubble sort (large to small) on regions in case there are more than 1
+    id = zeros(N);
+    for i = 1 : N
+        id(i) = i;
+    end
+    for i = 1 : N-1
+        for j = i+1 : N
+            if stats(i).Area < stats(j).Area
+                tmp = stats(i);
+                stats(i) = stats(j);
+                stats(j) = tmp;
+                tmp = id(i);
+                id(i) = id(j);
+                id(j) = tmp;
+            end
         end
     end
 
-    return
+
+    % conta quantos blobs tem mais que minpix e menos que maxpix
+    %falta remover os maiores que maxpix
+    cont=0;
+    for i=1:N
+        if stats(i).Area > minpix && stats(i).Area < maxpix
+            cont=cont+1;
+        else
+            break;
+        end
+    end
+    selected = (labeled==id(1));
+end
+
+% Calcular propriedades dos blobs detectados
+
+if length(stats) > 0
+    ndetect = length(stats);
+    for i = 1:ndetect
+        centroid = stats(i).Centroid;
+        radius(i) = sqrt(stats(i).Area / pi);
+        cc(i) = centroid(1);
+        cr(i) = centroid(2);
+        boundingbox(i, 1:4) = stats(i).BoundingBox;
+    end
+end
+
+return
 end
 
