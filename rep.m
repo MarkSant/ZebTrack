@@ -295,66 +295,59 @@ for ne=1:n
     end
     
     %angular velocity
-    if e(1).angularvelocity
-        vangular=zeros(nanimais,length(t));
-        np=7;
-        deltat = t(2)-t(1);
-        for i=1:nanimais
-             xf = tsmovavg(posicao{i}.x,'s',np,2); %atrasa floor(np/2)
-            %des atrasar sinal
-            %xf = xf(floor(.5*np):end);
-            dx = diff(xf); %perde um indice
-            dx = tsmovavg(dx,'s',np,2); %atrasa mais np/2
-            %des atrasar sinal
-            %dx = dx(floor(.5*np):end);
-            
-            ddx = diff(dx); %perde 1 indice
-            ddx = tsmovavg(ddx,'s',np,2); %atrasa mais np/2
-            ddx = atan(abs(ddx))*180/pi;
-            %des atrasar sinal
-            ddx = ddx(floor(3/2*np):end);
-            %tirar nan para o peakfinder
-            ddx(isnan(ddx)) = 0;
-            
-            yf = tsmovavg(posicao{i}.y,'s',np,2); %atrasa floor(np/2)
-            dy = diff(yf); %perde um indice
-            dy = tsmovavg(dy,'s',np,2); %atrasa mais np/2
-            ddy = diff(dy); %perde 1 indice
-            ddy = tsmovavg(ddy,'s',np,2); %atrasa mais np/2
-            ddy = atan(abs(ddy))*180/pi;
-            %des atrasar sinal
-            ddy = ddy(floor(3/2*np):end);
-            %tirar nan para o peakfinder
-            ddy(isnan(ddy)) = 0;
-            
-            %ddxy = max(ddx,ddy);
-            ddxy = sqrt(ddx.^2+ddy.^2);
-            
-            sel = [];
-            limmax = e(1).angularvelocitythreshold*90;
-            [picos,peakMag] = peakfinder(ddxy,sel,limmax);
-            f1=figure;
-            plot(t(1:length(ddxy)),ddxy);
-            csvwrite([directory 'angularvelocity' int2str(ne)  '.csv'],[t(1:length(ddxy));ddxy]);
-            hold on
-            plot(t(1:length(ddxy)),ones(length(ddxy))*limmax,'r');
-            tpicos = t(1) + (picos-1)*deltat;
-            plot(tpicos,peakMag,'ro','linewidth',2);
-            title(['Animal ' num2str(i) ' angular velocity']);
-            xlabel('Time (s)')
-            ylabel('Angular velocity (degree/frame)')
-            if e(1).report
-                snapnow
-                close(f1)
-            end
-             disp(['    Total number of sharp turns: ' num2str(length(picos))]) 
-             disp(['    Number of sharp turns per minute: ' num2str(length(picos)*60/(t(end) - t(1)))]) 
+if e(1).angularvelocity
+    vangular = zeros(nanimais, length(t));
+    np = 7;
+    deltat = t(2) - t(1);
+    for i = 1:nanimais
+        xf = movmean(posicao{i}.x*pxcm.x, np); % atrasa floor(np/2)
+        dx = diff(xf); % perde um indice
+        dx = movmean(dx, np); % atrasa mais np/2
+        ddx = diff(dx); % perde 1 indice
+        ddx = movmean(ddx, np); % atrasa mais np/2
+        ddx = atan(abs(ddx)) * 180 / pi;
+        ddx = ddx(floor(3/2 * np):end); % des atrasa sinal
+        ddx(isnan(ddx)) = 0; % tirar nan para o peakfinder
+
+        yf = movmean(posicao{i}.y*pxcm.y, np); % atrasa floor(np/2)
+        dy = diff(yf); % perde um indice
+        dy = movmean(dy, np); % atrasa mais np/2
+        ddy = diff(dy); % perde 1 indice
+        ddy = movmean(ddy, np); % atrasa mais np/2
+        ddy = atan(abs(ddy)) * 180 / pi;
+        ddy = ddy(floor(3/2 * np):end); % des atrasa sinal
+        ddy(isnan(ddy)) = 0; % tirar nan para o peakfinder
+
+        ddxy = sqrt(ddx.^2 + ddy.^2);
+
+        sel = [];
+        limmax = e(1).angularvelocitythreshold * 90;
+        [picos, peakMag] = peakfinder(ddxy, sel, limmax);
+        f1 = figure;
+        plot(t(1:length(ddxy)), ddxy);
+        csvwrite([directory 'angularvelocity' int2str(ne) '.csv'], [t(1:length(ddxy)); ddxy]);
+        hold on
+        plot(t(1:length(ddxy)), ones(length(ddxy)) * limmax, 'r');
+        tpicos = t(1) + (picos - 1) * deltat;
+        plot(tpicos, peakMag, 'ro', 'linewidth', 2);
+        title(['Animal ' num2str(i) ' angular velocity']);
+        xlabel('Time (s)')
+        ylabel('Angular velocity (degree/frame)')
+        if e(1).report
+            snapnow
+            close(f1)
         end
+        disp(['    Total number of sharp turns: ' num2str(length(picos))])
+        disp(['    Number of sharp turns per minute: ' num2str(length(picos) * 60 / (t(end) - t(1)))])
     end
+end
+
+
+
     
     
     
-    %computes heat map
+   %computes heat map
     if e(1).heat_map
         for j=1:nanimais
             heat_map_figure = zeros(figdimensions.l, figdimensions.c);
@@ -365,7 +358,7 @@ for ne=1:n
                 %dimensões do retangulo em que desejamos pintar
                 for k = -5:1:5
                     for m = -5:1:5
-                        heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)) + m, floor(posicao{j}.x(i)) + k) =  heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)) + m, floor(posicao{j}.x(i)) + k) + 1;
+                        heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)*pxcm.y) + m, floor(posicao{j}.x(i)*pxcm.x) + k) =  heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)*pxcm.y) + m, floor(posicao{j}.x(i)*pxcm.x) + k) + 1;
                     end
                 end
                 
@@ -402,6 +395,8 @@ for ne=1:n
             
         end
     end
+
+
     
     %Group statistcs
     if nanimais > 1  %so faz as estatisticas de grupo se for mais de um animal

@@ -865,6 +865,10 @@ e = handles.e;
 save(fullfile(handles.directoryname, [handles.filenameSemExtensao '.mat']), 'e');
 set(handles.mensagem,'String',['Result automatically saved to "' handles.filenameSemExtensao '.mat"']);
 
+saveresword_Callback(hObject, eventdata, handles);
+
+saveresexcel_Callback(hObject, eventdata, handles);
+
 guidata(hObject, handles);
 end
 
@@ -2116,7 +2120,9 @@ function saveresword_Callback(hObject, eventdata, handles)
 % hObject    handle to saveresword (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[FileName,PathName] = uiputfile('*.doc','Save as',handles.directoryname);
+% [FileName,PathName] = uiputfile('*.doc','Save as',handles.directoryname);
+FileName = [handles.e(1).filename, '_Resultados.doc'];
+PathName = handles.e(1).directory;
 handles.e(1).report = true;
 handles.e(1).basicinfo = get(handles.basicinfo,'Value');
 handles.e(1).animalplot = get(handles.animalplot,'Value');
@@ -2137,7 +2143,7 @@ handles.e(1).groupInfoVsanimalOne = false;
  assignin('base', 'e', handles.e);
  publish('rep.m','format','doc','showCode',false,'outputDir',PathName, 'useNewFigure',false);
  movefile(fullfile(PathName,'rep.doc'),fullfile(PathName,FileName),'f')
- msgbox('Report successfully saved!');
+ disp('Report successfully saved!');
  handles.e(1).report = false;
  guidata(hObject, handles);
 
@@ -2668,7 +2674,9 @@ if handles.e(1).angularvelocity
     s = [s {'number fo turns' 'turns per minute'}];
 end
 
-[FileName,PathName] = uiputfile('*.xls','Save as',handles.directoryname);
+% [FileName,PathName] = uiputfile('*.xls','Save as',handles.directoryname);
+FileName = [handles.e(1).filename, '_Resultados.xls'];
+PathName = handles.e(1).directory;
 
 try 
     [v1,v2,s] = xlsread(fullfile(PathName,FileName));
@@ -2776,7 +2784,7 @@ end
 disp('salving fale. wait...')
 xlswrite(fullfile(PathName,FileName),s);
 disp('File successfully saved!')
- msgbox('Report successfully saved!');
+
 
 end
 % --- Executes on button press in pause.
