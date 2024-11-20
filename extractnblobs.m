@@ -8,25 +8,25 @@
 
 %Inputs:
 % Imwork -> Frame atual
-% Imback -> wbackg que é o background;
+% Imback -> wbackg que ï¿½ o background;
 % V ->
-% n -> Número de animais a serem detectados (namimais);
-% mascara -> A mascara (região de interesse selecionada pelo usuário [é um array]);
-% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada de um animal.
-% tol -> tolerância/threshold;
-% avi -> aviobj2 que é o objeto de video diferença (não um vídeo!);
-% criavideo -> flag pra criar o video-diferença (criavideodiff);
-% tipsfundo -> flag que diz se há dicas na detecção no fundo;
+% n -> Nï¿½mero de animais a serem detectados (namimais);
+% mascara -> A mascara (regiï¿½o de interesse selecionada pelo usuï¿½rio [ï¿½ um array]);
+% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma ï¿½rea para ser considerada de um animal.
+% tol -> tolerï¿½ncia/threshold;
+% avi -> aviobj2 que ï¿½ o objeto de video diferenï¿½a (nï¿½o um vï¿½deo!);
+% criavideo -> flag pra criar o video-diferenï¿½a (criavideodiff);
+% tipsfundo -> flag que diz se hï¿½ dicas na detecï¿½ï¿½o no fundo;
 
 
 %outputs:
 % cc, cr ->
 % radius ->
-% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 são as coordenadas do canto inferior esquerdo
-% das bounding boxes dos blobs ([h w] seriam as dimensões da bounding box enquanto matriz!);
+% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 sï¿½o as coordenadas do canto inferior esquerdo
+% das bounding boxes dos blobs ([h w] seriam as dimensï¿½es da bounding box enquanto matriz!);
 % ndetect ->
 % avi ->
-% foremm -> foreground com a mascara aplicada (fore & mascara) e pós operações morfológicas para eliminar blobs pequenos;
+% foremm -> foreground com a mascara aplicada (fore & mascara) e pï¿½s operaï¿½ï¿½es morfolï¿½gicas para eliminar blobs pequenos;
 
 
 
@@ -40,25 +40,25 @@
 
 %Inputs:
 % Imwork -> Frame atual
-% Imback -> wbackg que é o background;
+% Imback -> wbackg que ï¿½ o background;
 % V ->
-% n -> Número de animais a serem detectados (namimais);
-% mascara -> A mascara (região de interesse selecionada pelo usuário [é um array]);
-% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada de um animal.
-% tol -> tolerância/threshold;
-% avi -> aviobj2 que é o objeto de video diferença (não um vídeo!);
-% criavideo -> flag pra criar o video-diferença (criavideodiff);
-% tipsfundo -> flag que diz se há dicas na detecção no fundo;
+% n -> Nï¿½mero de animais a serem detectados (namimais);
+% mascara -> A mascara (regiï¿½o de interesse selecionada pelo usuï¿½rio [ï¿½ um array]);
+% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma ï¿½rea para ser considerada de um animal.
+% tol -> tolerï¿½ncia/threshold;
+% avi -> aviobj2 que ï¿½ o objeto de video diferenï¿½a (nï¿½o um vï¿½deo!);
+% criavideo -> flag pra criar o video-diferenï¿½a (criavideodiff);
+% tipsfundo -> flag que diz se hï¿½ dicas na detecï¿½ï¿½o no fundo;
 
 
 %outputs:
 % cc, cr ->
 % radius ->
-% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 são as coordenadas do canto inferior esquerdo
-% das bounding boxes dos blobs ([h w] seriam as dimensões da bounding box enquanto matriz!);
+% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 sï¿½o as coordenadas do canto inferior esquerdo
+% das bounding boxes dos blobs ([h w] seriam as dimensï¿½es da bounding box enquanto matriz!);
 % ndetect ->
 % avi ->
-% foremm -> foreground com a mascara aplicada (fore & mascara) e pós operações morfológicas para eliminar blobs pequenos;
+% foremm -> foreground com a mascara aplicada (fore & mascara) e pï¿½s operaï¿½ï¿½es morfolï¿½gicas para eliminar blobs pequenos;
 
 
 
@@ -72,25 +72,25 @@
 
 %Inputs:
 % Imwork -> Frame atual
-% Imback -> wbackg que é o background;
+% Imback -> wbackg que ï¿½ o background;
 % V ->
-% n -> Número de animais a serem detectados (namimais);
-% mascara -> A mascara (região de interesse selecionada pelo usuário [é um array]);
-% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma área para ser considerada de um animal.
-% tol -> tolerância/threshold;
-% avi -> aviobj2 que é o objeto de video diferença (não um vídeo!);
-% criavideo -> flag pra criar o video-diferença (criavideodiff);
-% tipsfundo -> flag que diz se há dicas na detecção no fundo;
+% n -> Nï¿½mero de animais a serem detectados (namimais);
+% mascara -> A mascara (regiï¿½o de interesse selecionada pelo usuï¿½rio [ï¿½ um array]);
+% minpix, maxpix -> define o TAMANHO MINIMO e MAXIMO, em pixeis, de uma ï¿½rea para ser considerada de um animal.
+% tol -> tolerï¿½ncia/threshold;
+% avi -> aviobj2 que ï¿½ o objeto de video diferenï¿½a (nï¿½o um vï¿½deo!);
+% criavideo -> flag pra criar o video-diferenï¿½a (criavideodiff);
+% tipsfundo -> flag que diz se hï¿½ dicas na detecï¿½ï¿½o no fundo;
 
 
 %outputs:
 % cc, cr ->
 % radius ->
-% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 são as coordenadas do canto inferior esquerdo
-% das bounding boxes dos blobs ([h w] seriam as dimensões da bounding box enquanto matriz!);
+% boudingbox -> vetor que vem de stats(i).BoundingBox com as coordenadas [x0 y0 w(width) h(height)] onde x0 e y0 sï¿½o as coordenadas do canto inferior esquerdo
+% das bounding boxes dos blobs ([h w] seriam as dimensï¿½es da bounding box enquanto matriz!);
 % ndetect ->
 % avi ->
-% foremm -> foreground com a mascara aplicada (fore & mascara) e pós operações morfológicas para eliminar blobs pequenos;
+% foremm -> foreground com a mascara aplicada (fore & mascara) e pï¿½s operaï¿½ï¿½es morfolï¿½gicas para eliminar blobs pequenos;
 
 
 
@@ -109,7 +109,7 @@ end
 
 fore = zeros(MR, MC);
 colorida = (cor == 3);
-disp('aqui7');
+
 % Se coordenadas de bounding box forem fornecidas
 if nargin == 15
     labeled = zeros(MR, MC);
@@ -122,22 +122,22 @@ if nargin == 15
         cc(k) = (ax1(k) + ax2(k)) / 2;
         cr(k) = (ay1(k) + ay2(k)) / 2;
 
-        % Define o raio como sendo metade da medida do menor lado do retângulo
+        % Define o raio como sendo metade da medida do menor lado do retï¿½ngulo
         radius(k) = min((ax2(k) - ax1(k)), (ay2(k) - ay1(k))) / 2;
 
-        % Marca a região na imagem binária
+        % Marca a regiï¿½o na imagem binï¿½ria
         labeled(round(ay1(k)):round(ay2(k)), round(ax1(k)):round(ax2(k))) = 1;
     end
 
-    ndetect = length(ax1);  % Número de blobs detectados
-    foremm = labeled;  % A imagem processada é simplesmente a imagem binária gerada
+    ndetect = length(ax1);  % Nï¿½mero de blobs detectados
+    foremm = labeled;  % A imagem processada ï¿½ simplesmente a imagem binï¿½ria gerada
     stats = regionprops(labeled, ['basic']);
 else
-    % Caso não receba coordenadas de bounding box, prossiga com a lógica original
+    % Caso nï¿½o receba coordenadas de bounding box, prossiga com a lï¿½gica original
     disp('aqui8');
     if tipsubfundo == 0
 
-        % subtracao de fundo basica: valor da diferença maior que threshold
+        % subtracao de fundo basica: valor da diferenï¿½a maior que threshold
         if ~colorida
             fore = abs(Imback - Imwork) > tol;
         else
@@ -146,7 +146,7 @@ else
 
     else
 
-        % subtracao de fundo gaussiana: valor da diferença maior que
+        % subtracao de fundo gaussiana: valor da diferenï¿½a maior que
         % threshhold*raiz(variancia) para cada pixel
         if ~colorida
             fore = abs(Imback - Imwork) > tol*V(:,:,4);
@@ -194,8 +194,8 @@ else
     labeled = bwlabel(foremm,8); %conectividade 8
 
     stats = regionprops(labeled,['basic']);%basic mohem nist (only relevant information here: Area, centroid coordinates and Bounding box coordinates);
-    [N,W] = size(stats);                   %N-> número de blobs;
-    if N < 1 %|| n>N %se nao achou nenhum ou achou menos que o pedido a função acaba;
+    [N,W] = size(stats);                   %N-> nï¿½mero de blobs;
+    if N < 1 %|| n>N %se nao achou nenhum ou achou menos que o pedido a funï¿½ï¿½o acaba;
         return
     end
 

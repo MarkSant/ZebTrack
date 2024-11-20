@@ -338,7 +338,11 @@ if e(1).angularvelocity
             close(f1)
         end
         disp(['    Total number of sharp turns: ' num2str(length(picos))])
+        global total_sharp_turns;
+        total_sharp_turns = length(picos);
         disp(['    Number of sharp turns per minute: ' num2str(length(picos) * 60 / (t(end) - t(1)))])
+        global number_sharp_turns_minute;
+        number_sharp_turns_minute = length(picos) * 60 / (t(end) - t(1));
     end
 end
 

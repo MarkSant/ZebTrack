@@ -30,7 +30,7 @@ function varargout = trackGUI(varargin)
 
 % Edit the above text to modify the response to help trackGUI
 
-% Last Modified by GUIDE v2.5 22-Jun-2024 09:49:21
+% Last Modified by GUIDE v2.5 07-Nov-2024 18:08:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -512,9 +512,9 @@ if filename ~= 0
     
     %disp(['numero de frames ' num2str(handles.video.NumberOfFrames)])
     handles.frameRate = handles.video.NumberOfFrames/handles.video.Duration;
-    disp(handles.frameRate);
-    disp(handles.video.NumberOfFrames);
-    disp(handles.video.Duration);
+    %disp(handles.frameRate);
+    %disp(handles.video.NumberOfFrames);
+    %disp(handles.video.Duration);
     %barras de roalgem do video
     set(handles.sliderti,'Min',1);
     set(handles.slidertf,'Min',handles.frameRate);
@@ -708,9 +708,9 @@ if ~handles.live
         handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
 end
 fini = handles.frameini;
-disp(fini);
+%disp(fini);
 ffim = handles.framefim;
-disp(ffim);
+%disp(ffim);
 np = str2double(get(handles.npeixes,'String'));
 pxcm.x = str2double(get(handles.pxcmx,'String')); 
 pxcm.y = str2double(get(handles.pxcmy,'String')); 
@@ -2656,6 +2656,7 @@ function saveresexcel_Callback(hObject, eventdata, handles)
 % varargout{8} = handles.directoryname;
 % varargout{9} = handles.comportamento;
 
+handles.e(1).areainfo = get(handles.areainfo,'Value');
 handles.e(1).distlineinfo = get(handles.distlineinfo,'Value');
 handles.e(1).angularvelocity = get(handles.angularvelocity,'Value');
 handles.e(1).angularvelocitythreshold = get(handles.angvelthres,'Value');
@@ -2664,19 +2665,25 @@ handles.e(1).heat_map = get(handles.HeatMap,'Value');
 handles.e(1).groupInfo = false;
 handles.e(1).groupInfoVsanimalOne = false;
 
+% Declarar s como global
+global tj;
+global s;
 
 if handles.e(1).distlineinfo
 s ={'animal' 'mean speed' 'maximum speed' 'total distance' 'total time stoped' 'mean distance from a line' 'area number' 'time spent in area' 'latency'};
 else
-s ={'animal' 'mean speed' 'maximum speed' 'total distance' 'total time stoped' 'area number' 'time spent in area' 'latency'};    
-end
-if handles.e(1).angularvelocity
-    s = [s {'number fo turns' 'turns per minute'}];
+s ={'animal' 'mean speed' 'maximum speed' 'total distance' 'total time stoped' 'number of turns' 'turns per minute' 'area number' 'time spent in area' 'latency'};    
 end
 
+if handles.e(1).areainfo
+    s = [s {'mean speed in area' 'max speed in area' 'total distance in area' 'total time stopped in area' 'total of times entered in area'}];
+    
+end
+tj = s;
 % [FileName,PathName] = uiputfile('*.xls','Save as',handles.directoryname);
 FileName = [handles.e(1).filename, '_Resultados.xls'];
 PathName = handles.e(1).directory;
+output_xlsx_path = fullfile(PathName, FileName);
 
 try 
     [v1,v2,s] = xlsread(fullfile(PathName,FileName));
@@ -2704,72 +2711,113 @@ for ne=1:n
         c = p2y - a*p2x;
         distanciapfundo = [];
     end
-    
+    global total_sharp_turns;
+    global number_sharp_turns_minute;
 
     for i=1:nanimais
         if handles.e(1).distlineinfo
             distanciapfundo(i,:) = abs(a*handles.e(ne).posicao{i}.x + b*handles.e(ne).posicao{i}.y + c)/sqrt(a^2+b^2);
         
-            noval = {i, mean(handles.e(ne).velocidade{i}.total), max(handles.e(ne).velocidade{i}.total), handles.e(ne).distperc(i) sum(handles.e(ne).parado{i}.tf-handles.e(ne).parado{i}.ti), mean(distanciapfundo(i,:)) }; 
+            noval = {handles.filenameSemExtensao, mean(handles.e(ne).velocidade{i}.total), max(handles.e(ne).velocidade{i}.total), handles.e(ne).distperc(i), sum(handles.e(ne).parado{i}.tf-handles.e(ne).parado{i}.ti), mean(distanciapfundo(i,:)) }; 
         else
-           noval = {i, mean(handles.e(ne).velocidade{i}.total), max(handles.e(ne).velocidade{i}.total), handles.e(ne).distperc(i) sum(handles.e(ne).parado{i}.tf-handles.e(ne).parado{i}.ti)};  
+           noval = {handles.filenameSemExtensao, mean(handles.e(ne).velocidade{i}.total), max(handles.e(ne).velocidade{i}.total), handles.e(ne).distperc(i), sum(handles.e(ne).parado{i}.tf-handles.e(ne).parado{i}.ti), total_sharp_turns, number_sharp_turns_minute};
+           
         end
+
+        velocidade = handles.e(ne).velocidade;
+        tempoareas = handles.e(ne).tempoareas;
+        parado = handles.e(ne).parado;
+        t = handles.e(ne).t;
+        
+
         %tempo na primeira area
         if nareas > 0 && handles.e(ne).tempoareas{i,1}.tf(1) ~= 0
-                noval = [noval 1 sum(handles.e(ne).tempoareas{i,1}.tf - handles.e(ne).tempoareas{i,1}.ti), handles.e(ne).tempoareas{i,1}.ti(1) - handles.e(ne).t(1)];
+            velnaarea{i,1}.v=[];
+                for k=1:length(velocidade{i}.total);
+                    for l=1:length(tempoareas{i,1}.ti)
+                        if t(k) >= tempoareas{i,1}.ti(l) &&  t(k) < tempoareas{i,1}.tf(l) %neste tempo estava na area
+                            velnaarea{i,1}.v = [velnaarea{i,1}.v velocidade{i}.total(k)];
+                        end
+                    end
+                end
+            totparado(1)=0;
+            nvezesparado = length(parado{i}.ti);
+                for k=1:nvezesparado
+                    for l=1:length(tempoareas{i,1}.ti)
+                        if parado{i}.ti(k) >= tempoareas{i,1}.ti(l) &&  parado{i}.ti(k) < tempoareas{i,1}.tf(l)
+                            totparado(1) = totparado(1) + parado{i}.tf(k) - parado{i}.ti(k);
+                        end
+                    end
+                end
+            noval = [noval 1 sum(handles.e(ne).tempoareas{i,1}.tf - handles.e(ne).tempoareas{i,1}.ti), handles.e(ne).tempoareas{i,1}.ti(1) - handles.e(ne).t(1), mean(velnaarea{i,1}.v), max(velnaarea{i,1}.v), mean(velnaarea{i,1}.v*sum(tempoareas{i,1}.tf - tempoareas{i,1}.ti)), totparado(1), length(tempoareas{i,1}.ti)];
         else
-            noval = [noval {0 0 ''}];
+            noval = [noval {0 0 '' 0 0 0 0 0}];
         end  
-         if handles.e(1).angularvelocity
-           noval = [noval {'construcao' 'construcao'}];
-        end
+        
         s = [s;noval];        
         for j=2:nareas
             if handles.e(ne).tempoareas{i,j}.tf(1) ~= 0  %se o peixe entrou pelo menos uma vez na Ã¡rea
+                velnaarea{i,j}.v=[];
+                        for k=1:length(velocidade{i}.total);
+                            for l=1:length(tempoareas{i,j}.ti)
+                                if t(k) >= tempoareas{i,j}.ti(l) &&  t(k) < tempoareas{i,j}.tf(l) %neste tempo estava na area
+                                    velnaarea{i,j}.v = [velnaarea{i,j}.v velocidade{i}.total(k)];
+                                end
+                            end
+                        end
+                totparado(j)=0;
+                nvezesparado = length(parado{i}.ti);
+                        for k=1:nvezesparado
+                            for l=1:length(tempoareas{i,j}.ti)
+                                if parado{i}.ti(k) >= tempoareas{i,j}.ti(l) &&  parado{i}.ti(k) < tempoareas{i,j}.tf(l)
+                                    totparado(j) = totparado(j) + parado{i}.tf(k) - parado{i}.ti(k);
+                                end
+                            end
+                        end
                 if handles.e(1).distlineinfo
                     noval = {'', '', '', '', '','', j, sum(handles.e(ne).tempoareas{i,j}.tf - handles.e(ne).tempoareas{i,j}.ti), handles.e(ne).tempoareas{i,j}.ti(1) - handles.e(ne).t(1)};
                 else
-                    noval = {'', '', '', '','', j, sum(handles.e(ne).tempoareas{i,j}.tf - handles.e(ne).tempoareas{i,j}.ti), handles.e(ne).tempoareas{i,j}.ti(1) - handles.e(ne).t(1)};
+                    noval = {'', '', '', '', '', '', '', j, sum(handles.e(ne).tempoareas{i,j}.tf - handles.e(ne).tempoareas{i,j}.ti), handles.e(ne).tempoareas{i,j}.ti(1) - handles.e(ne).t(1), mean(velnaarea{i,j}.v), max(velnaarea{i,j}.v), mean(velnaarea{i,j}.v*sum(tempoareas{i,j}.tf - tempoareas{i,j}.ti)), totparado(j), length(tempoareas{i,j}.ti)};
                 end
                 
             else
                 if handles.e(1).distlineinfo
-                    noval = {'', '', '', '', '','', j, 0, ''};
+                    noval = {'', '', '', '', '','', j, 0, '', 0, 0, 0, 0, 0};
                 else
-                     noval = {'', '', '', '','', j, 0, ''};
+                     noval = {'', '', '', '','', '', '', j, 0, '', 0, 0, 0, 0, 0};
                 end
             end
-            if handles.e(1).angularvelocity
-                noval = [noval {'' ''}];
-            end
-             s = [s;noval];   
+            
+            
+
+            s = [s;noval];   
         end
     end
-    if handles.e(1).behaviourinfo 
-        nc = max(handles.e(ne).comportamento.tipo); %numero de comportamentos
-        tempcomp = zeros(1,nc);
-        for i=1:length(handles.e(ne).comportamento.tipo)
-           tempcomp(handles.e(ne).comportamento.tipo) =  tempcomp(handles.e(ne).comportamento.tipo(i)) + handles.e(ne).comportamento.tf(i) - handles.e(ne).comportamento.ti(i);
-        end
-        MatrizComportamento = ['Time spent in behaviour ' num2str(1) num2str(tempcomp(1))]; 
-        for i=2:nc
-            disp(['Time spent in behaviour ' num2str(i) ' : ' num2str(tempcomp(i))])
-            MatrizAux = {'Time spent in behaviour ' num2str(i) num2str(tempcomp(i))};
-            MatrizComportamento = [MatrizComportamento MatrizAux];
-        end
-        sheet = 2*ne;
-        xlswrite(fullfile(PathName,FileName), MatrizComportamento, sheet);
-        fprintf('\n');
+    %if handles.e(1).behaviourinfo 
+         %nc = max(handles.e(ne).comportamento.tipo); %numero de comportamentos
+         %tempcomp = zeros(1,nc);
+        %for i=1:length(handles.e(ne).comportamento.tipo)
+         %  tempcomp(handles.e(ne).comportamento.tipo) =  tempcomp(handles.e(ne).comportamento.tipo(i)) + handles.e(ne).comportamento.tf(i) - handles.e(ne).comportamento.ti(i);
+        %end
+        %MatrizComportamento = ['Time spent in behaviour ' num2str(1) num2str(tempcomp(1))]; 
+        %for i=2:nc
+        %    disp(['Time spent in behaviour ' num2str(i) ' : ' num2str(tempcomp(i))])
+        %    MatrizAux = {'Time spent in behaviour ' num2str(i) num2str(tempcomp(i))};
+        %    MatrizComportamento = [MatrizComportamento MatrizAux];
+        %end
+        %sheet = 2*ne;
+        %xlswrite(fullfile(PathName,FileName), MatrizComportamento, sheet);
+        %fprintf('\n');
         %behaviour transitions matrix
-        btm = zeros(max(handles.e(ne).comportamento.tipo)) - eye(max(handles.e(ne).comportamento.tipo));
-        for i=1:length(handles.e(ne).comportamento.tipo)-1
-            btm(handles.e(ne).comportamento.tipo(i),handles.e(ne).comportamento.tipo(i+1)) = btm(handles.e(ne).comportamento.tipo(i),handles.e(ne).comportamento.tipo(i+1)) + 1;
-        end
-        disp('Behaviour Transition Matrix')
-        disp(btm);
-        sheet = 2*ne + 1;
-        xlswrite(fullfile(PathName,FileName), btm, sheet);
-    end
+        %btm = zeros(max(handles.e(ne).comportamento.tipo)) - eye(max(handles.e(ne).comportamento.tipo));
+        %for i=1:length(handles.e(ne).comportamento.tipo)-1
+        %    btm(handles.e(ne).comportamento.tipo(i),handles.e(ne).comportamento.tipo(i+1)) = btm(handles.e(ne).comportamento.tipo(i),handles.e(ne).comportamento.tipo(i+1)) + 1;
+        %end
+        %disp('Behaviour Transition Matrix')
+        %disp(btm);
+        %sheet = 2*ne + 1;
+        %xlswrite(fullfile(PathName,FileName), btm, sheet);
+    %end
     
     
     
@@ -2781,12 +2829,35 @@ for ne=1:n
     
     
 end
-disp('salving fale. wait...')
-xlswrite(fullfile(PathName,FileName),s);
+disp('salving file. wait...')
+% Salvar o arquivo atualizado
+writecell(s, fullfile(PathName, FileName)); % Substitui xlswrite por writecell
+
+
+
+% Adicionar os dados ao arquivo unificado do projeto
+global project_xlsx_path;
+
+% Verificar se `project_xlsx_path` foi inicializado
+if isempty(project_xlsx_path)
+    disp('Aviso: Caminho do projeto principal não definido. Dados não foram adicionados ao arquivo unificado do projeto.');
+else
+    if exist (project_xlsx_path, 'file') == 0
+        create_excel_file(project_xlsx_path);
+    end
+    % Se `project_xlsx_path` estiver definido, adicione ao arquivo unificado
+    append_to_excel_file(output_xlsx_path, project_xlsx_path);
+    disp('Dados adicionados ao arquivo unificado do projeto com sucesso!');
+end
+
 disp('File successfully saved!')
 
-
+% Limpar s para evitar problemas em execuções futuras
+%s = [];
 end
+
+
+    
 % --- Executes on button press in pause.
 function pause_Callback(hObject, eventdata, handles)
 % hObject    handle to pause (see GCBO)
@@ -5080,3 +5151,105 @@ function btnSetPixelCm_Callback(hObject, eventdata, handles)
     % Atualizar a estrutura handles
     guidata(hObject, handles);
 end
+
+
+% --- Executes on button press in CreatProjectButton.
+function CreatProjectButton_Callback(hObject, eventdata, handles)
+% hObject    handle to CreatProjectButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    global project_running;
+    global project_xlsx_path;
+    global project_name;
+
+    % Toggle project_running status
+    if isempty(project_running) || ~project_running
+        % Project is not running; start it
+        project_running = true;
+        set(hObject, 'String', 'Terminar Projeto');
+        
+        % Ask the user to select the folder
+        folder_name = uigetdir('','Escolha a pasta do projeto:');
+        if folder_name == 0 % User pressed Cancel
+            project_running = false;
+            set(hObject, 'String', 'Criar Projeto');
+            return;
+        end
+        
+        % Create xlsx file in the chosen folder
+        project_name = strcat(extractAfter(folder_name, max(strfind(folder_name, filesep))), '_Planilha_Unificada');
+        xlsx_path = fullfile(folder_name, strcat(project_name, '.xlsx'));
+        %create_excel_file(xlsx_path);
+        project_xlsx_path = xlsx_path; % Salvar o caminho do arquivo do projeto para uso posterior
+    else
+        % Project is running; end it
+        project_running = false;
+        set(hObject, 'String', 'Criar Projeto');
+    end
+end
+
+% This function creates the Excel file with the default structure
+function create_excel_file(file_path)
+    global tj;
+    
+    if isempty(tj)
+        headers = {'Column1', 'Column2', 'Column3', 'Column4'};
+        disp("Aviso: `t` está vazio. Usando cabeçalho padrão em create_excel_file.");
+    else
+        headers = tj; % Utilize os cabeçalhos armazenados em `t`
+    end
+    
+    data = cell(1, numel(headers)); % Dados vazios para inicialização
+    writecell([headers; data], file_path);
+    disp("Arquivo Excel criado com cabeçalhos:");
+    %disp(headers); % Exibir cabeçalhos usados
+end
+
+
+function append_to_excel_file(source_xlsx, destination_xlsx)
+    % Lê os dados do arquivo fonte
+    raw = readcell(source_xlsx);
+
+    % Lê os dados atuais do arquivo destino
+    existing_raw = readcell(destination_xlsx);
+
+    % Obter cabeçalhos dos dois arquivos
+    source_headers = raw(1, :);
+    if ~isempty(existing_raw)
+        destination_headers = existing_raw(1, :);
+        %disp("Cabeçalhos do arquivo de destino:");
+        %disp(destination_headers);
+    else
+        destination_headers = source_headers;
+        disp("Inicializando o arquivo de destino com os cabeçalhos do arquivo de origem.");
+    end
+    
+    % Verificar compatibilidade dos cabeçalhos
+    if ~isequal(source_headers, destination_headers)
+        disp('Erro: Os cabeçalhos do arquivo de origem são incompatíveis com os do arquivo unificado do projeto.');
+        disp("Cabeçalhos de origem:");
+        disp(source_headers);
+        disp("Cabeçalhos de destino:");
+        disp(destination_headers);
+        return;
+    end
+
+    % Adicionar os dados ao arquivo unificado
+    if isempty(existing_raw)
+        combined_data = raw; % Inclui cabeçalhos e dados
+    else
+        combined_data = [existing_raw; raw(2:end,:)]; % Acrescenta os novos dados
+    end
+
+    % Substituir elementos 'missing' por strings vazias
+    missing_idx = cellfun(@(x) isa(x, 'missing'), combined_data);
+    combined_data(missing_idx) = {''};
+
+
+    % Grava o arquivo
+    writecell(combined_data, destination_xlsx);
+    disp('Dados adicionados ao arquivo unificado do projeto com sucesso!');
+end
+
+
+
