@@ -97,6 +97,7 @@ for ne=1:n
                 imshow(backg)
                 hold on
                 desenha_areas(e(1).areaint,'','b',1);
+                desenha_areas(e(1).areaproc,'','g',1);
                 if e(1).report
                     snapnow
                     close(f1)
@@ -325,7 +326,7 @@ if e(1).angularvelocity
         [picos, peakMag] = peakfinder(ddxy, sel, limmax);
         f1 = figure;
         plot(t(1:length(ddxy)), ddxy);
-        csvwrite([directory 'angularvelocity' int2str(ne) '.csv'], [t(1:length(ddxy)); ddxy]);
+        csvwrite(fullfile(directory, ['angularvelocity' int2str(ne) '.csv']), [t(1:length(ddxy)); ddxy]);
         hold on
         plot(t(1:length(ddxy)), ones(length(ddxy)) * limmax, 'r');
         tpicos = t(1) + (picos - 1) * deltat;

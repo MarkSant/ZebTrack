@@ -469,102 +469,119 @@ function btbrowse_Callback(hObject, eventdata, handles)
 % hObject    handle to btbrowse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[filename, directoryname] = uigetfile('*.avi;*.mov;*.mp4;*.wmv;*.flv','Choose the video file:');
- 
-if filename ~= 0
-    %le o video na memoria
-    warning ('off','all');
-    handles.video = VideoReader([directoryname,filename]);
-    warning ('on','all');
-    set(handles.pasta,'String',fullfile(directoryname, filename));
+
+% Variable to indicate completion status
+handles.processingComplete = false;
+
+% Verificar se já existem informações do vídeo fornecidas pelo CreatProjectButton_Callback
+if isfield(handles, 'directoryname') && isfield(handles, 'filename') && ~isempty(handles.directoryname) && ~isempty(handles.filename)
+    % Usar as informações já existentes
+    directoryname = handles.directoryname;
+    filename = handles.filename;
+else
+    % Caso contrário, solicitar ao usuário via uigetfile
+    [filename, directoryname] = uigetfile('*.avi;*.mov;*.mp4;*.wmv;*.flv', 'Choose the video file:');
+    if filename == 0
+        return; % Se o usuário cancelar, sair da função
+    end
+    % Atualizar handles com as informações obtidas do uigetfile
     handles.directoryname = directoryname;
     handles.filename = filename;
-    [directoryname, filenameSemExtensao, ext] = fileparts(get(handles.pasta,'String'));
-    handles.filenameSemExtensao = filenameSemExtensao;
-    
-    
-    %handles.areaproc = [];
-    %handles.areaint = [];
-    
-    set(handles.visualizar,'Enable','on')
-    
-    set(handles.apclick,'Enable','off')
-    set(handles.aiclick,'Enable','off')
-    set(handles.btareaintlimpar,'Enable','off')
-    set(handles.aeclick,'Enable','off')
-    set(handles.btareaexclimpar,'Enable','off')
-    set(handles.run,'Enable','off')
-    set(handles.calcpxcm,'Enable','off')
-    set(handles.btcriafundo,'Enable','off')
+end
 
-    axes(handles.axes1);
-    cla reset
-    set(handles.axes1,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
-    axes(handles.axes2);
-    cla reset
-    set(handles.axes2,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
+% Leitura do vídeo na memória
+warning ('off', 'all');
+handles.video = VideoReader(fullfile(directoryname, filename));
+warning ('on', 'all');
+set(handles.pasta, 'String', fullfile(directoryname, filename));
+[~, filenameSemExtensao, ~] = fileparts(get(handles.pasta, 'String'));
+handles.filenameSemExtensao = filenameSemExtensao;
+
+% Continuar o processamento como na lógica original...
+% Restante do código permanece igual
+
+%handles.areaproc = [];
+%handles.areaint = [];
+
+set(handles.visualizar,'Enable','on')
+
+set(handles.apclick,'Enable','off')
+set(handles.aiclick,'Enable','off')
+set(handles.btareaintlimpar,'Enable','off')
+set(handles.aeclick,'Enable','off')
+set(handles.btareaexclimpar,'Enable','off')
+set(handles.run,'Enable','off')
+set(handles.calcpxcm,'Enable','off')
+set(handles.btcriafundo,'Enable','off')
+
+axes(handles.axes1);
+cla reset
+set(handles.axes1,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
+axes(handles.axes2);
+cla reset
+set(handles.axes2,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
+axes(handles.axes3);
+cla reset
+set(handles.axes3,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
+axes(handles.axes4);
+cla reset
+set(handles.axes4,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
+
+%disp(['numero de frames ' num2str(handles.video.NumberOfFrames)])
+handles.frameRate = handles.video.NumberOfFrames/handles.video.Duration;
+%disp(handles.frameRate);
+%disp(handles.video.NumberOfFrames);
+%disp(handles.video.Duration);
+%barras de roalgem do video
+set(handles.sliderti,'Min',1);
+set(handles.slidertf,'Min',handles.frameRate);
+set(handles.sliderti,'Max',handles.video.NumberOfFrames - handles.frameRate); %seta maximo   handles.frameRate
+set(handles.slidertf,'Max',handles.video.NumberOfFrames); %seta maximo
+set(handles.sliderti,'Value',1); %seta valor inicial
+set(handles.slidertf,'Value',handles.video.NumberOfFrames); %seta valor inicial
+
+handles.valsliti = round(get(handles.sliderti,'Value'));
+handles.valslitf = round(get(handles.slidertf,'Value'));
+
+set(handles.sliderti,'Value',handles.valsliti);
+set(handles.slidertf,'Value',handles.valslitf);
+set(handles.tfimmin,'String',num2str(floor(handles.valslitf/(handles.frameRate*60))));
+set(handles.tfimseg,'String',num2str(floor(handles.valslitf/(handles.frameRate) - 60*floor(handles.valslitf/(handles.frameRate*60)))));
+
+%set(handles.qini,'String','1'); 
+set(handles.tinimin,'String','0')
+set(handles.tiniseg,'String','0')
+%set(handles.qfim,'String',num2str(handles.video.NumberOfFrames));
+%set(handles.tfimmin,'String',num2str(floor(handles.video.Duration/60)));
+%set(handles.tfimseg,'String',num2str( floor( handles.video.Duration -  floor(handles.video.Duration/60)*60 )));
+
+
+handles.frameini = floor((str2double(get(handles.tinimin,'String'))*60 + str2double(get(handles.tiniseg,'String')))*handles.frameRate + 1);
+handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
+
+%disp(['frame fim ' num2str(handles.framefim)])
+
+%if handles.framefim > handles.video.NumberOfFrames
+%    handles.framefim = handles.video.NumberOfFrames - handles.frameRate;
+%end
+
+
+try
+    fundo = imread([handles.directoryname,'/',filenameSemExtensao,'.jpeg']);
+    load([handles.directoryname,'/', filenameSemExtensao,'V.mat']);
+catch
+    %se nao tem, cria
+    %ajusta a quantidade de iamgens utilizadas de acordo com a duração do
+    %video
+    set(handles.fundoframe,'String',num2str(round(handles.video.NumberOfFrames*0.004)));
+    p = imread('processando.jpeg');
     axes(handles.axes3);
-    cla reset
-    set(handles.axes3,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
-    axes(handles.axes4);
-    cla reset
-    set(handles.axes4,'Color','w','XTick',[],'YTick',[],'XColor','w','YColor','w');
-    
-    %disp(['numero de frames ' num2str(handles.video.NumberOfFrames)])
-    handles.frameRate = handles.video.NumberOfFrames/handles.video.Duration;
-    %disp(handles.frameRate);
-    %disp(handles.video.NumberOfFrames);
-    %disp(handles.video.Duration);
-    %barras de roalgem do video
-    set(handles.sliderti,'Min',1);
-    set(handles.slidertf,'Min',handles.frameRate);
-    set(handles.sliderti,'Max',handles.video.NumberOfFrames - handles.frameRate); %seta maximo   handles.frameRate
-    set(handles.slidertf,'Max',handles.video.NumberOfFrames); %seta maximo
-    set(handles.sliderti,'Value',1); %seta valor inicial
-    set(handles.slidertf,'Value',handles.video.NumberOfFrames); %seta valor inicial
-    
-    handles.valsliti = round(get(handles.sliderti,'Value'));
-    handles.valslitf = round(get(handles.slidertf,'Value'));
-    
-    set(handles.sliderti,'Value',handles.valsliti);
-    set(handles.slidertf,'Value',handles.valslitf);
-    set(handles.tfimmin,'String',num2str(floor(handles.valslitf/(handles.frameRate*60))));
-    set(handles.tfimseg,'String',num2str(floor(handles.valslitf/(handles.frameRate) - 60*floor(handles.valslitf/(handles.frameRate*60)))));
-    
-    %set(handles.qini,'String','1'); 
-    set(handles.tinimin,'String','0')
-    set(handles.tiniseg,'String','0')
-    %set(handles.qfim,'String',num2str(handles.video.NumberOfFrames));
-    %set(handles.tfimmin,'String',num2str(floor(handles.video.Duration/60)));
-    %set(handles.tfimseg,'String',num2str( floor( handles.video.Duration -  floor(handles.video.Duration/60)*60 )));
-    
-    
-    handles.frameini = floor((str2double(get(handles.tinimin,'String'))*60 + str2double(get(handles.tiniseg,'String')))*handles.frameRate + 1);
-    handles.framefim = floor((str2double(get(handles.tfimmin,'String'))*60 + str2double(get(handles.tfimseg,'String')))*handles.frameRate);
-
-    %disp(['frame fim ' num2str(handles.framefim)])
-    
-    %if handles.framefim > handles.video.NumberOfFrames
-    %    handles.framefim = handles.video.NumberOfFrames - handles.frameRate;
-    %end
-    
-    
-    try
-        fundo = imread([handles.directoryname,'/',filenameSemExtensao,'.jpeg']);
-        load([handles.directoryname,'/', filenameSemExtensao,'V.mat']);
-    catch
-        %se nao tem, cria
-        %ajusta a quantidade de iamgens utilizadas de acordo com a duraÃ§Ã£o do
-        %video
-        set(handles.fundoframe,'String',num2str(round(handles.video.NumberOfFrames*0.004)));
-        p = imread('processando.jpeg');
-        axes(handles.axes3);
-        imshow(p);
-        drawnow;
-        %[fundo,V] = criafundo(handles.directoryname,handles.video,handles.frameini,handles.framefim,str2double(get(handles.fundoframe,'String')));
-        handles.waibarfundo.visivel('on');
-        [fundo,V] = criafundo(handles.directoryname,handles.filenameSemExtensao,handles.video,handles.frameini,handles.framefim,str2double(get(handles.fundoframe,'String')),handles.waibarfundo);
-    end
+    imshow(p);
+    drawnow;
+    %[fundo,V] = criafundo(handles.directoryname,handles.video,handles.frameini,handles.framefim,str2double(get(handles.fundoframe,'String')));
+    handles.waibarfundo.visivel('on');
+    [fundo,V] = criafundo(handles.directoryname,handles.filenameSemExtensao,handles.video,handles.frameini,handles.framefim,str2double(get(handles.fundoframe,'String')),handles.waibarfundo);
+end
 
 [l,c,~]=size(fundo);
 handles.c = c;
@@ -598,9 +615,13 @@ guidata(hObject, handles);
 visualizar_Callback(hObject, eventdata, guidata(hObject))
 
 handles=guidata(hObject);
+
+% Set the processing complete flag to true
+handles.processingComplete = true;
+
 guidata(hObject,handles);
 end
-end
+
 
 function npeixes_Callback(hObject, eventdata, handles)
 % hObject    handle to npeixes (see GCBO)
@@ -878,36 +899,50 @@ function csvPositionDataButton_Callback(hObject, eventdata, handles)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
 
-    % Abrir a janela de seleção de arquivo
-    [file, path] = uigetfile('*.csv', 'Select CSV file with Position Data');
-    if isequal(file, 0)
-        disp('User selected Cancel');
+    handles.processingComplete3 = false;
+    % Verificar se os dados de posição já estão nos handles
+    if isfield(handles, 'csv_position_data_path') && ~isempty(handles.csv_position_data_path)
+        % Utilizar o caminho armazenado nos handles
+        fullpath = handles.csv_position_data_path;
     else
-        fullpath = fullfile(path, file);
-        csvPositionData = readtable(fullpath);
-        
-        % Guardar os dados no handles
-        handles.csvPositionData = csvPositionData;
-        
-        % Calcular os intervalos entre os frames
-        frame_numbers = csvPositionData.frame;
-        frame_intervals = diff(frame_numbers);
-        
-        % Calcular a média dos intervalos
-        processing_rate = mean(frame_intervals);
-        
-        % Definir o valor de Processing Rate no handles
-        processing_rate_int = round(processing_rate);
-        proc_r = num2str(processing_rate_int);
-        set(handles.procframe, 'String', proc_r);
-
-        % Atualiza a estrutura handles
-        guidata(hObject, handles);
-        
-        % Chamar a função run_Callback diretamente para iniciar o processamento
-        run_Callback(hObject, eventdata, handles);
+        % Abrir a janela de seleção de arquivo
+        [file, path] = uigetfile('*.csv', 'Select CSV file with Position Data');
+        if isequal(file, 0)
+            disp('User selected Cancel');
+            return;
+        else
+            fullpath = fullfile(path, file);
+            % Armazenar o caminho no handles para uso futuro
+            handles.csv_position_data_path = fullpath;
+            guidata(hObject, handles); % Atualizar os handles
+        end
     end
+
+    % Ler o arquivo CSV de dados de posição
+    csvPositionData = readtable(fullpath);
+    
+    % Guardar os dados no handles
+    handles.csvPositionData = csvPositionData;
+
+    % Calcular os intervalos entre os frames
+    frame_numbers = csvPositionData.frame;
+    frame_intervals = diff(frame_numbers);
+
+    % Calcular a média dos intervalos
+    processing_rate = mean(frame_intervals);
+
+    % Definir o valor de Processing Rate no handles
+    processing_rate_int = round(processing_rate);
+    proc_r = num2str(processing_rate_int);
+    set(handles.procframe, 'String', proc_r);
+    handles.processingComplete3 = true;
+    % Atualiza a estrutura handles
+    guidata(hObject, handles);
+
+    % Chamar a função run_Callback diretamente para iniciar o processamento
+    run_Callback(hObject, eventdata, handles);
 end
+
 
 
 function apxi_Callback(hObject, eventdata, handles)
@@ -2847,13 +2882,13 @@ else
     end
     % Se `project_xlsx_path` estiver definido, adicione ao arquivo unificado
     append_to_excel_file(output_xlsx_path, project_xlsx_path);
-    disp('Dados adicionados ao arquivo unificado do projeto com sucesso!');
+    
 end
 
 disp('File successfully saved!')
 
 % Limpar s para evitar problemas em execuções futuras
-%s = [];
+s = [];
 end
 
 
@@ -4940,32 +4975,51 @@ end
 
 % --- Executes on button press in csvProcessButton.
 function csvProcessButton_Callback(hObject, eventdata, handles)
-    % Abrir a janela de seleção de arquivo
-    [file, path] = uigetfile('*.csv', 'Select CSV file');
-    if isequal(file, 0)
-        disp('User selected Cancel');
+    % Variable to indicate completion status
+    handles.processingComplete1 = false;
+    
+    % Verificar se já existe um caminho para o arquivo CSV em handles
+    if isfield(handles, 'csv_file_path') && ~isempty(handles.csv_file_path)
+        % Usar o caminho fornecido pela CreateProjectButton_Callback
+        fullpath = handles.csv_file_path;
     else
-        fullpath = fullfile(path, file);
-        csvData = readtable(fullpath);
-        
-        % Extraia as coordenadas x e y do arquivo CSV
-        x_coords = csvData{:, 1};
-        y_coords = csvData{:, 2};
-        
-        % Inicializa a definição da área de processamento
-        handles.definirapc = 1;
-        handles.nvertice = 1;
-        handles.areaproc.x = [];
-        handles.areaproc.y = [];
-        handles.clickini = [0 0];
-        
-        % Atualiza a área de processamento com as coordenadas
-        handles = updateProcessingArea(handles, x_coords, y_coords);
-              
-        % Atualiza a estrutura handles
-        guidata(hObject, handles);
+        % Abrir a janela de seleção de arquivo, caso não tenha sido fornecido
+        [file, path] = uigetfile('*.csv', 'Select CSV file');
+        if isequal(file, 0)
+            disp('User selected Cancel');
+            return; % Saída da função caso o usuário cancele a operação
+        else
+            fullpath = fullfile(path, file);
+            % Armazenar o caminho do arquivo CSV em handles
+            handles.csv_file_path = fullpath;
+            guidata(hObject, handles);
+        end
     end
+    
+    % Ler o arquivo CSV e processar as informações
+    csvData = readtable(fullpath);
+    
+    % Extraia as coordenadas x e y do arquivo CSV
+    x_coords = csvData{:, 1};
+    y_coords = csvData{:, 2};
+    
+    % Inicializa a definição da área de processamento
+    handles.definirapc = 1;
+    handles.nvertice = 1;
+    handles.areaproc.x = [];
+    handles.areaproc.y = [];
+    handles.clickini = [0 0];
+    
+    % Atualiza a área de processamento com as coordenadas
+    handles = updateProcessingArea(handles, x_coords, y_coords);
+          
+    % Set the processing complete flag to true
+    handles.processingComplete1 = true;
+    
+    % Atualiza a estrutura handles
+    guidata(hObject, handles);
 end
+
 
 
 
@@ -5006,36 +5060,48 @@ function csvInterestAreasButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-    % Abrir a janela de seleção de arquivo
-    [file, path] = uigetfile('*.csv', 'Select CSV file for Interest Areas');
-    if isequal(file, 0)
-        disp('User selected Cancel');
-    else
-        fullpath = fullfile(path, file);
-        csvData = readtable(fullpath);
-        
-        % Inicializa a definição das áreas de interesse
-        handles.definirapc = 3;
-        
-        % Processa cada linha do CSV
-        for i = 1:height(csvData)
-            % Extraia as coordenadas x e y do arquivo CSV
-            x1 = csvData{i, 2};
-            y1 = csvData{i, 3};
-            x2 = csvData{i, 4};
-            y2 = csvData{i, 5};
-            
-            % Define os quatro vértices do quadrado
-            x_coords = [x1, x2, x2, x1, x1];
-            y_coords = [y1, y1, y2, y2, y1];
-            
-            % Atualiza as áreas de interesse com as coordenadas
-            handles = updateInterestAreas(handles, x_coords, y_coords);
+handles.processingComplete2 = false;
+    % Abrir a janela de seleção de arquivo, se necessário
+    if ~isfield(handles, 'csv_interest_areas_path') || isempty(handles.csv_interest_areas_path)
+        [file, path] = uigetfile('*.csv', 'Select CSV file for Interest Areas');
+        if isequal(file, 0)
+            disp('User selected Cancel');
+            return;
+        else
+            fullpath = fullfile(path, file);
         end
-        
-        % Atualiza a estrutura handles
-        guidata(hObject, handles);
+    else
+        % Usar o caminho salvo no handles
+        fullpath = handles.csv_interest_areas_path;
     end
+    
+    % Ler o arquivo CSV
+    csvData = readtable(fullpath);
+    
+    % Inicializa a definição das áreas de interesse
+    handles.definirapc = 3;
+    
+    % Processa cada linha do CSV
+    for i = 1:height(csvData)
+        % Extraia as coordenadas x e y do arquivo CSV
+        x1 = csvData{i, 2};
+        y1 = csvData{i, 3};
+        x2 = csvData{i, 4};
+        y2 = csvData{i, 5};
+        
+        % Define os quatro vértices do quadrado
+        x_coords = [x1, x2, x2, x1, x1];
+        y_coords = [y1, y1, y2, y2, y1];
+        
+        % Atualiza as áreas de interesse com as coordenadas
+        handles = updateInterestAreas(handles, x_coords, y_coords);
+    end
+    
+    % Setar a variável de conclusão de processamento para true
+    handles.processingComplete2 = true;
+    
+    % Atualiza a estrutura handles
+    guidata(hObject, handles);
 end
 
 
@@ -5115,6 +5181,9 @@ function btnSetPixelCm_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
     % Obter as medidas fornecidas pelo usuário
+
+    global endsize;
+    endsize = 0;
     width_cm = str2double(get(handles.txtWidth, 'String'));
     height_cm = str2double(get(handles.txtHeight, 'String'));
 
@@ -5148,6 +5217,8 @@ function btnSetPixelCm_Callback(hObject, eventdata, handles)
     set(handles.txtWidth, 'Enable', 'off');
     set(handles.txtHeight, 'Enable', 'off');
 
+    
+    endsize = 1;
     % Atualizar a estrutura handles
     guidata(hObject, handles);
 end
@@ -5155,37 +5226,358 @@ end
 
 % --- Executes on button press in CreatProjectButton.
 function CreatProjectButton_Callback(hObject, eventdata, handles)
-% hObject    handle to CreatProjectButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+    % hObject    handle to CreatProjectButton (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
     global project_running;
     global project_xlsx_path;
     global project_name;
+    global project_folder_path;
+    global num_subfolders;
+    
+        % Toggle project_running status
+        if isempty(project_running) || ~project_running
+            % Project is not running; start it
+            project_running = true;
+            set(hObject, 'String', 'Terminar Projeto');
+            
+            % Ask the user to select the folder
+            folder_name = uigetdir('', 'Escolha a pasta do projeto:');
+            if folder_name == 0 % User pressed Cancel
+                project_running = false;
+                set(hObject, 'String', 'Criar Projeto');
+                return;
+            end
+            
+            % Store the folder path for future use
+            project_folder_path = folder_name;
+            
+            % Create xlsx file in the chosen folder
+            project_name = strcat(extractAfter(folder_name, max(strfind(folder_name, filesep))), '_Planilha_Unificada');
+            xlsx_path = fullfile(folder_name, strcat(project_name, '.xlsx'));
+            %create_excel_file(xlsx_path);
+            project_xlsx_path = xlsx_path; % Salvar o caminho do arquivo do projeto para uso posterior
+            
+            % Verify the content of the folder
+            folder_content = dir(project_folder_path);
+            % Note: MATLAB lists folder content in alphabetical order (A-Z) by default.
+            % The order includes '.' and '..' at the beginning, followed by the files and subfolders in alphabetical order.
+    
+            % Count the number of subfolders
+            num_subfolders = sum([folder_content.isdir]) - 2; % Subtracting 2 to ignore '.' and '..'
+            
+            % Access the first subfolder in alphabetical order
+            subfolder_names = {folder_content([folder_content.isdir]).name};
+            subfolder_names = subfolder_names(~ismember(subfolder_names, {'.', '..'})); % Remove '.' and '..'
+            first_subfolder_name = subfolder_names{1};
+            first_subfolder_path = fullfile(project_folder_path, first_subfolder_name);
+            
+            % Search for the only .mp4 file in the first subfolder
+            subfolder_content = dir(fullfile(first_subfolder_path, '*.mp4'));
+            if numel(subfolder_content) == 1
+                video_file_path = fullfile(first_subfolder_path, subfolder_content(1).name);
+            else
+                video_file_path = '';
+            end
+            
+            % Store the paths in handles for future use
+            handles.subfolder_path = first_subfolder_path;
+            handles.video_file_path = video_file_path;
+            handles.directoryname = first_subfolder_path; % Definir o caminho da subpasta onde o vídeo está localizado
+            handles.filename = subfolder_content(1).name; % Nome do arquivo de vídeo encontrado
+            guidata(hObject, handles); % Save the updated handles structure
+            
+            handles.processingComplete = false;
+    
+            % Call btbrowse_Callback to process the video
+            btbrowse_Callback(hObject, eventdata, handles);
+            
+            % Wait until btbrowse processing is complete
+            while ~handles.processingComplete
+                pause(0.1); % Small delay to avoid CPU overload
+                handles = guidata(hObject); % Update handles to check the latest status
+            end
+            
+            % Proceed with the next steps after processing is complete
+            disp('btbrowse processing completed. Proceeding to the next step...');
+            
+            % Search for the CSV file that starts with "1_" in the first subfolder
+            csv_file_content = dir(fullfile(first_subfolder_path, '1_*.csv'));
+            if numel(csv_file_content) == 1
+                csv_file_path = fullfile(first_subfolder_path, csv_file_content(1).name);
+                
+                % Store the CSV path in handles for future use
+                handles.csv_file_path = csv_file_path;
+                guidata(hObject, handles); % Save the updated handles structure
+                
+                handles.processingComplete1 = false;
+    
+                % Call csvProcessButton_Callback to process the CSV data
+                csvProcessButton_Callback(hObject, eventdata, handles);
+                
+                % Wait until csvProcessButton processing is complete
+                while ~handles.processingComplete1
+                    pause(0.1); % Small delay to avoid CPU overload
+                    handles = guidata(hObject); % Update handles to check the latest status
+                end
+                
+                % Proceed with further steps after CSV processing is complete
+                disp('csvProcessButton processing completed. Proceeding to the next step...');
+                
+            else
+                disp('No CSV file found starting with "1_" in the first subfolder.');
+            end
+                
+            % Search for the CSV file that starts with "2_" in the first subfolder
+            csv_interest_areas_content = dir(fullfile(first_subfolder_path, '2_*.csv'));
+            if numel(csv_interest_areas_content) == 1
+                csv_interest_areas_path = fullfile(first_subfolder_path, csv_interest_areas_content(1).name);
+                    
+                % Store the CSV path in handles for future use
+                handles.csv_interest_areas_path = csv_interest_areas_path;
+                guidata(hObject, handles); % Save the updated handles structure
+                    
+                handles.processingComplete2 = false;
+                    
+                % Call csvInterestAreasButton_Callback to process the Interest Areas CSV data
+                csvInterestAreasButton_Callback(hObject, eventdata, handles);
+                    
+                % Wait until csvInterestAreasButton processing is complete
+                while ~handles.processingComplete2
+                    pause(0.1); % Small delay to avoid CPU overload
+                    handles = guidata(hObject); % Update handles to check the latest status
+                end
+                    
+                % Proceed with further steps after CSV interest areas processing is complete
+                disp('csvInterestAreasButton processing completed. Proceeding to the next step...');
+            else
+                disp('No CSV file found starting with "2_" in the first subfolder.');
+            end
+            
+    
+            % Chamar a janela de diálogo para obter as medidas do aquário
+            openAquariumDimensionsDialog(handles);
+            global endsize;
+            endsize = 0;
+            while endsize ~= 1
+                    pause(0.1); % Small delay to avoid CPU overload
+                    handles = guidata(hObject); % Update handles to check the latest status
+            end
+            % Proceed with further steps after CSV processing is complete
+            disp('Size of aquarium defined. Proceeding to the next step...');
 
-    % Toggle project_running status
-    if isempty(project_running) || ~project_running
-        % Project is not running; start it
-        project_running = true;
-        set(hObject, 'String', 'Terminar Projeto');
+            % Search for the CSV file that starts with "3_" in the first subfolder
+            csv_position_data_content = dir(fullfile(first_subfolder_path, '3_*.csv'));
+            if numel(csv_position_data_content) == 1
+                csv_position_data_path = fullfile(first_subfolder_path, csv_position_data_content(1).name);
+    
+                % Store the CSV path in handles for future use
+                handles.csv_position_data_path = csv_position_data_path;
+                guidata(hObject, handles); % Save the updated handles structure
+    
+                handles.processingComplete3 = false;
+    
+                % Call csvPositionDataButton_Callback to process the Position Data CSV
+                csvPositionDataButton_Callback(hObject, eventdata, handles);
+    
+                % Wait until csvPositionDataButton processing is complete
+                while ~handles.processingComplete3
+                    pause(0.1); % Small delay to avoid CPU overload
+                    handles = guidata(hObject); % Update handles to check the latest status
+                end
+    
+                % Proceed with further steps after CSV position data processing is complete
+                disp('csvPositionDataButton processing completed. Proceeding to the next step...');
+            else
+                disp('No CSV file found starting with "3_" in the first subfolder.');
+            end
+            %global appendExcelEnd;
+            %appendExcelEnd = 0;
+            %while appendExcelEnd ~= 1
+             %       pause(0.1); % Small delay to avoid CPU overload
+              %      handles = guidata(hObject); % Update handles to check the latest status
+            %end
+
+            % Iterar sobre todas as subpastas restantes
+            for idx = 2:length(subfolder_names)
+                % Obter o caminho da subpasta atual
+                current_subfolder_name = subfolder_names{idx};
+                current_subfolder_path = fullfile(project_folder_path, current_subfolder_name);
+    
+                % Buscar o único arquivo mp4 na subpasta atual
+                current_subfolder_content = dir(fullfile(current_subfolder_path, '*.mp4'));
+                if numel(current_subfolder_content) == 1
+                    current_video_file_path = fullfile(current_subfolder_path, current_subfolder_content(1).name);
         
-        % Ask the user to select the folder
-        folder_name = uigetdir('','Escolha a pasta do projeto:');
-        if folder_name == 0 % User pressed Cancel
+                    % Atualizar os handles com as informações do vídeo atual
+                    handles.subfolder_path = current_subfolder_path;
+                    handles.video_file_path = current_video_file_path;
+                    handles.directoryname = current_subfolder_path; % Definir o caminho da subpasta onde o vídeo está localizado
+                    handles.filename = current_subfolder_content(1).name; % Nome do arquivo de vídeo encontrado
+                    guidata(hObject, handles); % Atualizar a estrutura handles
+        
+                    handles.processingComplete = false;
+                    btbrowse_Callback(hObject, eventdata, handles);
+        
+                    % Aguardar o processamento de btbrowse
+                    while ~handles.processingComplete
+                        pause(0.1); % Pequeno delay para evitar sobrecarga de CPU
+                        handles = guidata(hObject); % Atualizar handles para verificar o status mais recente
+                    end
+        
+                    % Confirmar que o processamento foi concluído e continuar
+                    disp(['btbrowse processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                            
+                else
+                    disp(['No .mp4 file found in subfolder: ' current_subfolder_name '. Skipping this folder.']);
+                end
+
+                % Buscar o arquivo CSV que começa com "1_" na subpasta atual
+                csv_file_content = dir(fullfile(current_subfolder_path, '1_*.csv'));
+                if numel(csv_file_content) == 1
+                    csv_file_path = fullfile(current_subfolder_path, csv_file_content(1).name);
+
+                    % Armazenar o caminho do CSV no handles para uso futuro
+                    handles.csv_file_path = csv_file_path;
+                    guidata(hObject, handles); % Salvar a estrutura handles atualizada
+
+                    handles.processingComplete1 = false;
+
+                    % Chamar csvProcessButton_Callback para processar os dados do CSV
+                    csvProcessButton_Callback(hObject, eventdata, handles);
+
+                    % Aguardar o processamento de csvProcessButton
+                    while ~handles.processingComplete1
+                        pause(0.1); % Pequeno delay para evitar sobrecarga de CPU
+                        handles = guidata(hObject); % Atualizar handles para verificar o status mais recente
+                    end
+
+                    % Confirmar que o processamento foi concluído e continuar
+                    disp(['csvProcessButton processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                else
+                    disp(['No CSV file found starting with "1_" in subfolder: ' current_subfolder_name '. Skipping this step.']);
+                end
+
+                % Buscar o arquivo CSV que começa com "3_" na subpasta atual
+                csv_position_data_content = dir(fullfile(current_subfolder_path, '3_*.csv'));
+                if numel(csv_position_data_content) == 1
+                    csv_position_data_path = fullfile(current_subfolder_path, csv_position_data_content(1).name);
+            
+                    % Armazenar o caminho do CSV no handles para uso futuro
+                    handles.csv_position_data_path = csv_position_data_path;
+                    guidata(hObject, handles); % Salvar a estrutura handles atualizada
+            
+                    handles.processingComplete3 = false;
+            
+                    % Chamar csvPositionDataButton_Callback para processar os dados de Posição do CSV
+                    csvPositionDataButton_Callback(hObject, eventdata, handles);
+            
+                    % Aguardar o processamento de csvPositionDataButton
+                    while ~handles.processingComplete3
+                        pause(0.1); % Pequeno delay para evitar sobrecarga de CPU
+                        handles = guidata(hObject); % Atualizar handles para verificar o status mais recente
+                    end
+            
+                    % Confirmar que o processamento foi concluído e continuar
+                    disp(['csvPositionDataButton processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                else
+                    disp(['No CSV file found starting with "3_" in subfolder: ' current_subfolder_name '. Skipping this step.']);
+                end
+
+                %appendExcelEnd = 0;
+                %while appendExcelEnd ~= 1
+                %    pause(0.1); % Small delay to avoid CPU overload
+                %    handles = guidata(hObject); % Update handles to check the latest status
+                %end
+                
+
+            end
+            disp('Fim de processamento de todas pastas do Projeto.')
+            % Criação da janela de finalização do projeto
+            fj = figure('Name', 'Fim dos Processamentos', 'NumberTitle', 'off', 'MenuBar', 'none', ...
+                       'ToolBar', 'none', 'Position', [500, 500, 300, 150], 'WindowStyle', 'modal');
+
+            % Texto para indicar o fim dos processamentos
+            uicontrol('Parent', fj, 'Style', 'text', 'Position', [50, 80, 200, 40], ...
+                      'String', 'Fim dos processamentos!', 'FontSize', 12, 'HorizontalAlignment', 'center');
+
+            % Botão para terminar o projeto
+            uicontrol('Parent', fj, 'Style', 'pushbutton', 'String', 'Terminar Projeto', ...
+                      'Position', [100, 20, 100, 30], 'Callback', @(~, ~) finalizarProjeto(fj, hObject, handles));
+
+            
+        else
+            % Project is running; end it
             project_running = false;
             set(hObject, 'String', 'Criar Projeto');
-            return;
-        end
-        
-        % Create xlsx file in the chosen folder
-        project_name = strcat(extractAfter(folder_name, max(strfind(folder_name, filesep))), '_Planilha_Unificada');
-        xlsx_path = fullfile(folder_name, strcat(project_name, '.xlsx'));
-        %create_excel_file(xlsx_path);
-        project_xlsx_path = xlsx_path; % Salvar o caminho do arquivo do projeto para uso posterior
-    else
-        % Project is running; end it
-        project_running = false;
-        set(hObject, 'String', 'Criar Projeto');
+      end
+end
+
+% Função callback para o botão "Terminar Projeto"
+function finalizarProjeto(fig_handle, hObject, handles)
+    global project_running;
+    project_running = false;
+
+    % Encontrar o botão com a tag 'CreatProjectButton'
+    botaoCriarProjeto = findobj(fig_handle, 'Tag', 'CreatProjectButton');
+
+    % Alterar o texto do botão encontrado
+    set(botaoCriarProjeto, 'String', 'Criar Projeto');
+    
+    % Fechar a janela modal
+    close(fig_handle);
+end
+
+% Criação da função openAquariumDimensionsDialog
+function openAquariumDimensionsDialog(handles)
+    % Criar a janela de diálogo
+    f = figure('Name', 'Medidas do Aquário', 'NumberTitle', 'off', 'MenuBar', 'none', ...
+        'ToolBar', 'none', 'Position', [500, 500, 300, 200], 'WindowStyle', 'modal');
+
+    % Texto para perguntar as medidas do aquário
+    uicontrol('Parent', f, 'Style', 'text', 'Position', [50, 150, 200, 30], ...
+        'String', 'Medidas do aquário:', 'FontSize', 12);
+
+    % Rótulo para Largura
+    uicontrol('Parent', f, 'Style', 'text', 'Position', [30, 100, 100, 20], ...
+        'String', 'Largura (cm):', 'HorizontalAlignment', 'left');
+
+    % Caixa de texto para Largura
+    txtWidthInput = uicontrol('Parent', f, 'Style', 'edit', 'Position', [150, 100, 100, 20]);
+
+    % Rótulo para Altura
+    uicontrol('Parent', f, 'Style', 'text', 'Position', [30, 60, 100, 20], ...
+        'String', 'Altura (cm):', 'HorizontalAlignment', 'left');
+
+    % Caixa de texto para Altura
+    txtHeightInput = uicontrol('Parent', f, 'Style', 'edit', 'Position', [150, 60, 100, 20]);
+
+    % Botão OK
+    btnOK = uicontrol('Parent', f, 'Style', 'pushbutton', 'String', 'OK', ...
+        'Position', [100, 20, 100, 30], 'Callback', {@btnOK_Callback, handles, txtWidthInput, txtHeightInput, f});
+end
+
+% Callback do botão OK
+function btnOK_Callback(~, ~, handles, txtWidthInput, txtHeightInput, f)
+    % Recuperar os valores de largura e altura inseridos
+    largura = str2double(get(txtWidthInput, 'String'));
+    altura = str2double(get(txtHeightInput, 'String'));
+
+    % Verificar se os valores são válidos
+    if isnan(largura) || isnan(altura) || largura <= 0 || altura <= 0
+        errordlg('Por favor, insira valores válidos para largura e altura.', 'Erro');
+        return;
     end
+
+    % Atualizar os elementos de interface gráfica da GUI principal
+    set(handles.txtWidth, 'String', num2str(largura));
+    set(handles.txtHeight, 'String', num2str(altura));
+    
+    % Chamar a função que precisa ser executada
+    btnSetPixelCm_Callback(f, [], handles);
+
+    % Fechar a janela de entrada de medidas
+    close(f);
 end
 
 % This function creates the Excel file with the default structure
@@ -5205,8 +5597,9 @@ function create_excel_file(file_path)
     %disp(headers); % Exibir cabeçalhos usados
 end
 
-
 function append_to_excel_file(source_xlsx, destination_xlsx)
+    global appendExcelEnd;
+    appendExcelEnd = 0;
     % Lê os dados do arquivo fonte
     raw = readcell(source_xlsx);
 
@@ -5249,6 +5642,7 @@ function append_to_excel_file(source_xlsx, destination_xlsx)
     % Grava o arquivo
     writecell(combined_data, destination_xlsx);
     disp('Dados adicionados ao arquivo unificado do projeto com sucesso!');
+    appendExcelEnd =1;
 end
 
 
