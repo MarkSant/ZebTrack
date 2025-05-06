@@ -30,7 +30,7 @@ function varargout = trackGUI(varargin)
 
 % Edit the above text to modify the response to help trackGUI
 
-% Last Modified by GUIDE v2.5 07-Nov-2024 18:08:35
+% Last Modified by GUIDE v2.5 30-Apr-2025 08:57:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2178,7 +2178,7 @@ handles.e(1).groupInfoVsanimalOne = false;
  assignin('base', 'e', handles.e);
  publish('rep.m','format','doc','showCode',false,'outputDir',PathName, 'useNewFigure',false);
  movefile(fullfile(PathName,'rep.doc'),fullfile(PathName,FileName),'f')
- disp('Report successfully saved!');
+ disp('Report successfully saved in Word!');
  handles.e(1).report = false;
  guidata(hObject, handles);
 
@@ -2724,7 +2724,7 @@ try
     [v1,v2,s] = xlsread(fullfile(PathName,FileName));
     disp('added to selected file');
 catch
-    disp('creating new file');
+    disp('Creating new Excel file to Single Results.');
 end
 n = length(handles.e);
 for ne=1:n
@@ -2856,7 +2856,7 @@ for ne=1:n
     
     
     
-    disp([num2str(round(ne/n*100)) ' generating file...']);
+    %disp([num2str(round(ne/n*100)) ' generating file...']);
      
     
     
@@ -2864,7 +2864,7 @@ for ne=1:n
     
     
 end
-disp('salving file. wait...')
+disp('Saving Excel file of Single Resuts...')
 % Salvar o arquivo atualizado
 writecell(s, fullfile(PathName, FileName)); % Substitui xlswrite por writecell
 
@@ -2885,7 +2885,7 @@ else
     
 end
 
-disp('File successfully saved!')
+disp('Excel file of Global Unified data saved!')
 
 % Limpar s para evitar problemas em execuções futuras
 s = [];
@@ -5299,7 +5299,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
             end
             
             % Proceed with the next steps after processing is complete
-            disp('btbrowse processing completed. Proceeding to the next step...');
+            disp('Video Processing completed. Proceeding to the next step...');
             
             % Search for the CSV file that starts with "1_" in the first subfolder
             csv_file_content = dir(fullfile(first_subfolder_path, '1_*.csv'));
@@ -5322,7 +5322,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                 end
                 
                 % Proceed with further steps after CSV processing is complete
-                disp('csvProcessButton processing completed. Proceeding to the next step...');
+                disp('Processing Area defined by csv file. Proceeding to the next step...');
                 
             else
                 disp('No CSV file found starting with "1_" in the first subfolder.');
@@ -5349,7 +5349,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                 end
                     
                 % Proceed with further steps after CSV interest areas processing is complete
-                disp('csvInterestAreasButton processing completed. Proceeding to the next step...');
+                disp('Areas of Interest defined by csv file. Proceeding to the next step...');
             else
                 disp('No CSV file found starting with "2_" in the first subfolder.');
             end
@@ -5364,7 +5364,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                     handles = guidata(hObject); % Update handles to check the latest status
             end
             % Proceed with further steps after CSV processing is complete
-            disp('Size of aquarium defined. Proceeding to the next step...');
+            disp('Size of Aquarium defined. Proceeding to the next step...');
 
             % Search for the CSV file that starts with "3_" in the first subfolder
             csv_position_data_content = dir(fullfile(first_subfolder_path, '3_*.csv'));
@@ -5387,7 +5387,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                 end
     
                 % Proceed with further steps after CSV position data processing is complete
-                disp('csvPositionDataButton processing completed. Proceeding to the next step...');
+                disp('Tracking Data obtained in csv file. Proceeding to the next step...');
             else
                 disp('No CSV file found starting with "3_" in the first subfolder.');
             end
@@ -5426,7 +5426,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                     end
         
                     % Confirmar que o processamento foi concluído e continuar
-                    disp(['btbrowse processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                    disp(['Video Processing completed in subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
                             
                 else
                     disp(['No .mp4 file found in subfolder: ' current_subfolder_name '. Skipping this folder.']);
@@ -5453,7 +5453,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                     end
 
                     % Confirmar que o processamento foi concluído e continuar
-                    disp(['csvProcessButton processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                    disp(['Processing Area defined by csv file in subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
                 else
                     disp(['No CSV file found starting with "1_" in subfolder: ' current_subfolder_name '. Skipping this step.']);
                 end
@@ -5468,7 +5468,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                     guidata(hObject, handles); % Salvar a estrutura handles atualizada
             
                     handles.processingComplete3 = false;
-            
+                    disp(['Tracking Data obtained in csv file in subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
                     % Chamar csvPositionDataButton_Callback para processar os dados de Posição do CSV
                     csvPositionDataButton_Callback(hObject, eventdata, handles);
             
@@ -5479,7 +5479,7 @@ function CreatProjectButton_Callback(hObject, eventdata, handles)
                     end
             
                     % Confirmar que o processamento foi concluído e continuar
-                    disp(['csvPositionDataButton processing completed for subfolder: ' current_subfolder_name '. Proceeding to the next step...']);
+                    disp(['Processing Data of ' current_subfolder_name ' ENDED. Initiating next animal...']);
                 else
                     disp(['No CSV file found starting with "3_" in subfolder: ' current_subfolder_name '. Skipping this step.']);
                 end
@@ -5593,7 +5593,7 @@ function create_excel_file(file_path)
     
     data = cell(1, numel(headers)); % Dados vazios para inicialização
     writecell([headers; data], file_path);
-    disp("Arquivo Excel criado com cabeçalhos:");
+    %disp("Arquivo Excel criado com cabeçalhos:");
     %disp(headers); % Exibir cabeçalhos usados
 end
 
@@ -5641,9 +5641,6 @@ function append_to_excel_file(source_xlsx, destination_xlsx)
 
     % Grava o arquivo
     writecell(combined_data, destination_xlsx);
-    disp('Dados adicionados ao arquivo unificado do projeto com sucesso!');
+    disp('Data added to global unified Excel file!');
     appendExcelEnd =1;
 end
-
-
-

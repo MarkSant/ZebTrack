@@ -121,7 +121,8 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 
     %TEMPO, em segundos, que o animal tem que ficar PARADO para se considerar que DORMIU
     tminparado = tempminparado;
-
+    
+    
 
 
     %threshold adaptativo
@@ -331,6 +332,10 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
         nareas = 0;
     end
 
+    indparado_area = zeros(nanimais, nareas);
+    contparado_area = zeros(nanimais, nareas);
+    parado_area = cell(nanimais, nareas);
+    
     %para que todas as areas aparecam na resp, colocar que todos os peixes
     %entraram e sairam no temop zero em cada uma
     for i=1:nanimais
@@ -779,36 +784,68 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
             end
         end
 
-        %testa, para cada area, se cada animal esta dentro
-        alguemdentro = zeros(1,nareas);
-        for k=1:nareas
-            for j=1:nanimais
-                %if(px(j,cont)>= areas(k).xi && px(j,cont)<= areas(k).xf && py(j,cont)>= areas(k).yi && py(j,cont)<= areas(k).yf)
-                if inpolygon(px(j,cont),py(j,cont),areas(k).x,areas(k).y)
+        % Testa, para cada área, se cada animal está dentro verificando os vértices da bounding box
+        alguemdentro = zeros(1, nareas);
+        for k = 1:nareas
+            for j = 1:nanimais
+                % Calcula os vértices da bounding box do animal j.
+                % Supondo que a variável 'caixa(j,:)' está no formato [x, y, width, height]
+                box = caixa(j, :);
+                vx = [box(1), box(1) + box(3), box(1) + box(3), box(1)];
+                vy = [box(2), box(2), box(2) + box(4), box(2) + box(4)];
+        
+                % Verifica se pelo menos um vértice está dentro da área de interesse definida pelo polígono
+                insideCorners = inpolygon(vx, vy, areas(k).x, areas(k).y);
+                if any(insideCorners)
                     dentro = 1;
-                    alguemdentro(k)=1;
-                     factions(3,k,j,actions,serialcom);
+                    alguemdentro(k) = 1;
+                    factions(3, k, j, actions, serialcom);
                 else
                     dentro = 0;
-                    factions(4,k,j,actions,serialcom);
+                    factions(4, k, j, actions, serialcom);
                 end
-                %se estava fora e entrou agora
+                
+                % Verifica se está parado dentro da área
+                if pa && dentro
+                    if ~indparado_area(j,k)
+                        indparado_area(j,k) = 1;
+                        contparado_area(j,k) = contparado_area(j,k) + 1;
+                        parado_area{j,k}.ti(contparado_area(j,k)) = t(cont);
+                        parado_area{j,k}.xi(contparado_area(j,k)) = px(j,cont)/pixelcm.x;
+                        parado_area{j,k}.yi(contparado_area(j,k)) = (1 - py(j,cont))/pixelcm.y;
+                    end
+                else
+                    if indparado_area(j,k)
+                        indparado_area(j,k) = 0;
+                        parado_area{j,k}.tf(contparado_area(j,k)) = t(cont);
+                        parado_area{j,k}.xf(contparado_area(j,k)) = px(j,cont)/pixelcm.x;
+                        parado_area{j,k}.yf(contparado_area(j,k)) = (1 - py(j,cont))/pixelcm.y;
+
+                        % Se o tempo parado dentro da área foi menor que tempmin, descarta
+                        if parado_area{j,k}.tf(contparado_area(j,k)) - parado_area{j,k}.ti(contparado_area(j,k)) < tmin
+                            parado_area{j,k}.ti(contparado_area(j,k)) = [];
+                            parado_area{j,k}.tf(contparado_area(j,k)) = [];
+                            parado_area{j,k}.xi(contparado_area(j,k)) = [];
+                            parado_area{j,k}.yi(contparado_area(j,k)) = [];
+                            parado_area{j,k}.xf(contparado_area(j,k)) = [];
+                            parado_area{j,k}.yf(contparado_area(j,k)) = [];
+                            contparado_area(j,k) = contparado_area(j,k) - 1;
+                        end
+                    end
+                end
+
+                % Atualiza o estado de entrada e saída da área
                 if ~dentroarea(j,k) && dentro
                     dentroarea(j,k) = 1;
                     contareas(j,k) = contareas(j,k) + 1;
                     tempoareas{j,k}.ti(contareas(j,k)) = t(cont);
-                    factions(1,k,j,actions,serialcom);
                 end
-
-                %se estava dentro e saiu agora
                 if dentroarea(j,k) && ~dentro
                     dentroarea(j,k) = 0;
                     tempoareas{j,k}.tf(contareas(j,k)) = t(cont);
-                    factions(2,k,j,actions,serialcom);
                 end
             end
         end
-
 
 
         %para acelerar o funcionamento, so mostra na tela de tempos em
