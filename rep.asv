@@ -16,6 +16,8 @@ for ne=1:n
     figdimensions = e(1).figdimensions;
     directory = e(1).directory;
     filename = e(1).filename;
+    cont_parada_area = e(ne).contparado_area;
+    coord_parada_area = e(ne).parado_area;
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,7 +37,7 @@ for ne=1:n
         for i=1:nanimais
             disp(['Animal ' num2str(i)])
             for j=1:nareas
-                if length(tempoareas{i,j}) ~= 0  %se o peixe entrou pelo menos uma vez na ·rea
+                if length(tempoareas{i,j}) ~= 0  %se o peixe entrou pelo menos uma vez na √°rea
                     tt = sum(tempoareas{i,j}.tf - tempoareas{i,j}.ti);
                 else
                     tt = 0;
@@ -57,7 +59,7 @@ for ne=1:n
             disp(['    Total time stoped for animal ' num2str(i) ': ' num2str(sum(parado{i}.tf-parado{i}.ti)) 's'])
             for j=1:nareas
                 fprintf(['    Number of times the animal ' num2str(i) ' entered in area ' num2str(j) ': '])
-                if tempoareas{i,j}.tf(1) ~= 0  %se o peixe entrou pelo menos uma vez na ·rea
+                if tempoareas{i,j}.tf(1) ~= 0  %se o peixe entrou pelo menos uma vez na √°rea
                     disp(num2str(length(tempoareas{i,j}.ti)))
                 else
                     disp('0');
@@ -97,6 +99,7 @@ for ne=1:n
                 imshow(backg)
                 hold on
                 desenha_areas(e(1).areaint,'','b',1);
+                desenha_areas(e(1).areaproc,'','g',1);
                 if e(1).report
                     snapnow
                     close(f1)
@@ -108,7 +111,7 @@ for ne=1:n
                 disp(['Animal ' num2str(i)])
                 for j=1:nareas
                     disp(['   Statistics in Area ' num2str(j)])
-                     if tempoareas{i,j}.tf(1) ~= 0  %se o peixe entrou pelo menos uma vez na ·rea
+                     if tempoareas{i,j}.tf(1) ~= 0  %se o peixe entrou pelo menos uma vez na √°rea
                         velnaarea{i,j}.v=[];
                         for k=1:length(velocidade{i}.total);
                             for l=1:length(tempoareas{i,j}.ti)
@@ -121,7 +124,7 @@ for ne=1:n
                         disp(['      Max speed ' num2str(max(velnaarea{i,j}.v))])
                         disp(['      Total distance ' num2str(mean(velnaarea{i,j}.v*sum(tempoareas{i,j}.tf - tempoareas{i,j}.ti)))])
 
-                        %tempo parado em cada ·rea
+                        %tempo parado em cada √°rea
                         totparado(j)=0;
                         nvezesparado = length(parado{i}.ti);
                         for k=1:nvezesparado
@@ -137,6 +140,8 @@ for ne=1:n
                          disp('      Animal did not enter the area');
                      end
                 end
+                %%CODIGO DE ASSIS AQUI
+                
             end
         end
     end
@@ -261,7 +266,7 @@ for ne=1:n
         end
     end
     
-    %Ex11: dist‚ncia para uma reta
+    %Ex11: dist√¢ncia para uma reta
     if e(1).distlineinfo
         %converte areaproc de px pra cm
         p1x = e(1).distlineini.x/pxcm.x;
@@ -293,84 +298,81 @@ for ne=1:n
     end
     
     %angular velocity
-    if e(1).angularvelocity
-        vangular=zeros(nanimais,length(t));
-        np=7;
-        deltat = t(2)-t(1);
-        for i=1:nanimais
-             xf = tsmovavg(posicao{i}.x,'s',np,2); %atrasa floor(np/2)
-            %des atrasar sinal
-            %xf = xf(floor(.5*np):end);
-            dx = diff(xf); %perde um indice
-            dx = tsmovavg(dx,'s',np,2); %atrasa mais np/2
-            %des atrasar sinal
-            %dx = dx(floor(.5*np):end);
-            
-            ddx = diff(dx); %perde 1 indice
-            ddx = tsmovavg(ddx,'s',np,2); %atrasa mais np/2
-            ddx = atan(abs(ddx))*180/pi;
-            %des atrasar sinal
-            ddx = ddx(floor(3/2*np):end);
-            %tirar nan para o peakfinder
-            ddx(isnan(ddx)) = 0;
-            
-            yf = tsmovavg(posicao{i}.y,'s',np,2); %atrasa floor(np/2)
-            dy = diff(yf); %perde um indice
-            dy = tsmovavg(dy,'s',np,2); %atrasa mais np/2
-            ddy = diff(dy); %perde 1 indice
-            ddy = tsmovavg(ddy,'s',np,2); %atrasa mais np/2
-            ddy = atan(abs(ddy))*180/pi;
-            %des atrasar sinal
-            ddy = ddy(floor(3/2*np):end);
-            %tirar nan para o peakfinder
-            ddy(isnan(ddy)) = 0;
-            
-            %ddxy = max(ddx,ddy);
-            ddxy = sqrt(ddx.^2+ddy.^2);
-            
-            sel = [];
-            limmax = e(1).angularvelocitythreshold*90;
-            [picos,peakMag] = peakfinder(ddxy,sel,limmax);
-            f1=figure;
-            plot(t(1:length(ddxy)),ddxy);
-            csvwrite([directory 'angularvelocity' int2str(ne)  '.csv'],[t(1:length(ddxy));ddxy]);
-            hold on
-            plot(t(1:length(ddxy)),ones(length(ddxy))*limmax,'r');
-            tpicos = t(1) + (picos-1)*deltat;
-            plot(tpicos,peakMag,'ro','linewidth',2);
-            title(['Animal ' num2str(i) ' angular velocity']);
-            xlabel('Time (s)')
-            ylabel('Angular velocity (degree/frame)')
-            if e(1).report
-                snapnow
-                close(f1)
-            end
-             disp(['    Total number of sharp turns: ' num2str(length(picos))]) 
-             disp(['    Number of sharp turns per minute: ' num2str(length(picos)*60/(t(end) - t(1)))]) 
+if e(1).angularvelocity
+    vangular = zeros(nanimais, length(t));
+    np = 7;
+    deltat = t(2) - t(1);
+    for i = 1:nanimais
+        xf = movmean(posicao{i}.x*pxcm.x, np); % atrasa floor(np/2)
+        dx = diff(xf); % perde um indice
+        dx = movmean(dx, np); % atrasa mais np/2
+        ddx = diff(dx); % perde 1 indice
+        ddx = movmean(ddx, np); % atrasa mais np/2
+        ddx = atan(abs(ddx)) * 180 / pi;
+        ddx = ddx(floor(3/2 * np):end); % des atrasa sinal
+        ddx(isnan(ddx)) = 0; % tirar nan para o peakfinder
+
+        yf = movmean(posicao{i}.y*pxcm.y, np); % atrasa floor(np/2)
+        dy = diff(yf); % perde um indice
+        dy = movmean(dy, np); % atrasa mais np/2
+        ddy = diff(dy); % perde 1 indice
+        ddy = movmean(ddy, np); % atrasa mais np/2
+        ddy = atan(abs(ddy)) * 180 / pi;
+        ddy = ddy(floor(3/2 * np):end); % des atrasa sinal
+        ddy(isnan(ddy)) = 0; % tirar nan para o peakfinder
+
+        ddxy = sqrt(ddx.^2 + ddy.^2);
+
+        sel = [];
+        limmax = e(1).angularvelocitythreshold * 90;
+        [picos, peakMag] = peakfinder(ddxy, sel, limmax);
+        f1 = figure;
+        plot(t(1:length(ddxy)), ddxy);
+        csvwrite(fullfile(directory, ['angularvelocity' int2str(ne) '.csv']), [t(1:length(ddxy)); ddxy]);
+        hold on
+        plot(t(1:length(ddxy)), ones(length(ddxy)) * limmax, 'r');
+        tpicos = t(1) + (picos - 1) * deltat;
+        plot(tpicos, peakMag, 'ro', 'linewidth', 2);
+        title(['Animal ' num2str(i) ' angular velocity']);
+        xlabel('Time (s)')
+        ylabel('Angular velocity (degree/frame)')
+        if e(1).report
+            snapnow
+            close(f1)
         end
+        disp(['    Total number of sharp turns: ' num2str(length(picos))])
+        global total_sharp_turns;
+        total_sharp_turns = length(picos);
+        disp(['    Number of sharp turns per minute: ' num2str(length(picos) * 60 / (t(end) - t(1)))])
+        global number_sharp_turns_minute;
+        number_sharp_turns_minute = length(picos) * 60 / (t(end) - t(1));
     end
+end
+
+
+
     
     
     
-    %computes heat map
+   %computes heat map
     if e(1).heat_map
         for j=1:nanimais
             heat_map_figure = zeros(figdimensions.l, figdimensions.c);
-            for i=1:length(posicao{j}.x)%a quantidade de pontos pintados depende sÛ de uma das coordenanadas,
+            for i=1:length(posicao{j}.x)%a quantidade de pontos pintados depende s√≥ de uma das coordenanadas,
                                         %mais especificamente do quantidade
                                         %armaezenada em posicao{}.x da
                                         %mesma.
-                %dimensıes do retangulo em que desejamos pintar
+                %dimens√µes do retangulo em que desejamos pintar
                 for k = -5:1:5
                     for m = -5:1:5
-                        heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)) + m, floor(posicao{j}.x(i)) + k) =  heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)) + m, floor(posicao{j}.x(i)) + k) + 1;
+                        heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)*pxcm.y) + m, floor(posicao{j}.x(i)*pxcm.x) + k) =  heat_map_figure(floor(figdimensions.l-posicao{j}.y(i)*pxcm.y) + m, floor(posicao{j}.x(i)*pxcm.x) + k) + 1;
                     end
                 end
                 
             end
             
             %max(max(heat_map_figure)); %to normalize the heatmap matrix.
-            hmfb = ind2rgb(uint8(heat_map_figure), jet(max(max(heat_map_figure)))); %È preferÌvel que os valores de jet sejam baixos!
+            hmfb = ind2rgb(uint8(heat_map_figure), jet(max(max(heat_map_figure)))); %√© prefer√≠vel que os valores de jet sejam baixos!
 
             
             f1 = figure;
@@ -380,14 +382,14 @@ for ne=1:n
             alpha = 0.5;
             f2 = figure;
             
-%             tentado modificar com uso de OPERA«’ES MORFOL”FICAS e o filtro
+%             tentado modificar com uso de OPERA√á√ïES MORFOL√ìFICAS e o filtro
 %             gaussiano.
 %             
 %             SE = strel('disk',1); %referencia de um circulo com raio de tamnho 1 pixel!
 %             heatMapBonitoDilatado = imdilate(hmfb,SE); %dilata a figura.
             
                
-            hmfb = imgaussfilt(hmfb, 2);    %aplicaÁ„o do filtro gaussiano aqui!
+            hmfb = imgaussfilt(hmfb, 2);    %aplica√ß√£o do filtro gaussiano aqui!
             
             sobreposta = (1-alpha)*double(backg) + alpha*double(255*hmfb);%multiplied by 255 given that ind2rgb returns a value between 0 and 1.
             imshow(uint8(sobreposta));
@@ -400,47 +402,80 @@ for ne=1:n
             
         end
     end
+
+
     
-    if e(1).groupInfo
-        for i =1:length(t)
-            %variances
-            varx(i) = var(posicao{2:end}.x(i));
-            vary(i) = var(posicao{:}.y(i));
-            %centroid
-            meanx(i) = mean(posicao{:}.x(i));
-            meany(i) = mean(posicao{:}.y(i));
-                        
-            %distance
-            for j=1:nanimais
-               dist(j,i) = norm([posicao{j}.x(i)-meanx(i) posicao{j}.y(i)-meany(i)] );
+    %Group statistcs
+    if nanimais > 1  %so faz as estatisticas de grupo se for mais de um animal
+        %Pr√© alocando os arrays para o c√°lculo das m√©tricas de coes√£o de grupo
+        meandist = zeros(1, length(t));
+        dist = zeros(nanimais, length(t));
+        if e(1).groupInfo || true
+            meanx = mean(posicao{2:end}.x);
+            meany = mean(posicao{2:end}.y);
+
+            varx = var(posicao{2:end}.x);
+            vary = var(posicao{2:end}.y);
+
+            for i=1:length(t)
+
+                %distance
+                for j=1:nanimais
+                   dist(j,i) = norm([posicao{j}.x(i)-meanx posicao{j}.y(i)-meany]);
+                end
+                meandist(i) = mean(dist(:,i));
+                %disp(['n-√©sima varia√ßao em x: ' num2str(varx(i))]);
+                %disp(['n-√©sima posi√ß√£o em x: ' num2str(var(posicao{2:end}.x(i)))]);
             end
-            meandist(i) = mean(dist(:,i);
-            
+            variancia_media_x = mean(varx);
+            variancia_media_y = mean(vary);
+            vartotal = var(posicao{2:end}.x) * var(posicao{2:end}.y);
+            %disp(['Mean distance: ' num2str(mean(meandist)) ' cm'])
+            disp(['Coefficient of group cohesion: ' num2str(vartotal)]);
+            if e(1).report
+               snapnow
+               close(f1);
+               close(f2);
+            end
+
         end
-        
-        f1 = figure;
-        plot(t,varx)
-        f2 = figure;
-        plot(t,vary)
-        vartotal = vx.*vy;
-        f3 = figure;
-        plot(t,vartotal)
-        
-        if e(1).report
-           snapnow
-           close(f1);
-           close(f2);
+        distanimaloneprocentro = zeros(1, length(t));
+        meandist = zeros(1, length(t));
+        dist = zeros(nanimais, length(t));
+        if e(1).groupInfoVsanimalOne || true
+            varx = var(posicao{2:end}.x);
+            vary = var(posicao{2:end}.y);
+
+            meanx = mean(posicao{2:end}.x);
+            meany = mean(posicao{2:end}.y);
+            for i =1:length(t)
+                %distance
+                for j=2:nanimais
+                   dist(j,i) = norm([posicao{j}.x(i)-meanx posicao{j}.y(i)-meany] );
+                end
+                meandist(i) = mean(dist(:,i));
+                %Vs animal one
+                %verificar se presta
+                distanimaloneprocentro(i) = norm([meanx-posicao{1}.x(i) meany-posicao{1}.y(i)]);
+            end
+            disp(['Mean distance from animal 1 to the centroid of the group: ' num2str(mean(distanimaloneprocentro))]);
+            disp(['Variance of mean distance from animal 1 to the centroid of the group: ' num2str(var(distanimaloneprocentro))]);
+            if e(1).report
+               snapnow
+               close(f1);
+               close(f2);
+            end
+
         end
-            
+        if ~e(1).report && ne~=n 
+             fprintf('\n\n');
+             disp('Press any key to see the results of the next experiment (or Ctrl+C to stop showing results, in case you saved it in another format)')
+             pause
+        end
     end
     
-    
-    if ~e(1).report && ne~=n 
-         fprintf('\n\n');
-         disp('Press any key to see the results of the next experiment (or Ctrl+C to stop showing results, in case you saved it in another format)')
-         pause
+    if e(1).areasequence
+        areasequence_computation(tempoareas)
     end
-     
-    
     
 end %do for de cada experimento

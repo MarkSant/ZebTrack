@@ -77,7 +77,7 @@
 
 
 
-function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
+function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento,parado_area,contparado_area] = track(mostraresnatela,quadroini,quadrofim,fotos,video,pixelcm,nanimais,procframe...
     ,corte,areas,areasexc,criavideores,viddiff,thresh,filt,handles,fundodinamico,tipfilt,tipsubfundo,velmin,tempmin,tempminparado,subcor,cameralenta,trackmouse,liveTracking,trackindividuals,labels,labels_cov,actions,pinicial,csvPositionData)
 
     %CONSTANTES A SEREM AJUSTADAS:
@@ -787,6 +787,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
             end
         end
 
+        % Testa se animal está dentro da área
         alguemdentro = zeros(1, nareas); % Inicializa para o quadro atual 'cont'
 
         for k = 1:nareas % Loop para cada área de interesse

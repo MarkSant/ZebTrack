@@ -2836,7 +2836,6 @@ for ne=1:n
                 %            end
                 %        end
                 % --- CÁLCULO ADAPTADO do tempo total parado (totparado) na área j_area ---
-
                 totparado(j)=0; % Inicializa o tempo total parado na área j_area para o animal i
                 area_atual_idx = j;
             
@@ -2847,11 +2846,11 @@ for ne=1:n
                         if ~isempty(tempos_inicio_parada_area) && (length(tempos_inicio_parada_area) == length(tempos_fim_parada_area))
                             diferencas_tempo = tempos_fim_parada_area - tempos_inicio_parada_area;
                             diferencas_tempo_validas = diferencas_tempo(~isnan(diferencas_tempo));
-                            totparado(j) = sum(diferencas_tempo_validas);
+                            totparado(j_area) = sum(diferencas_tempo_validas);
                         end
                     end
                 end
-                % --- FIM DO CÁLCULO ADAPTADO de totparado(j) ---
+                % --- FIM DO CÁLCULO ADAPTADO de totparado(j_area) ---
                 if handles.e(1).distlineinfo
                     noval = {'', '', '', '', '','', j, sum(handles.e(ne).tempoareas{i,j}.tf - handles.e(ne).tempoareas{i,j}.ti), handles.e(ne).tempoareas{i,j}.ti(1) - handles.e(ne).t(1)};
                 else

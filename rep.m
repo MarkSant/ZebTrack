@@ -16,6 +16,8 @@ for ne=1:n
     figdimensions = e(1).figdimensions;
     directory = e(1).directory;
     filename = e(1).filename;
+    cont_parada_area = e(ne).contparado_area;
+    coord_parada_area = e(ne).parado_area;
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,12 +125,33 @@ for ne=1:n
                         disp(['      Total distance ' num2str(mean(velnaarea{i,j}.v*sum(tempoareas{i,j}.tf - tempoareas{i,j}.ti)))])
 
                         %tempo parado em cada área
-                        totparado(j)=0;
-                        nvezesparado = length(parado{i}.ti);
-                        for k=1:nvezesparado
-                            for l=1:length(tempoareas{i,j}.ti)
-                                if parado{i}.ti(k) >= tempoareas{i,j}.ti(l) &&  parado{i}.ti(k) < tempoareas{i,j}.tf(l)
-                                    totparado(j) = totparado(j) + parado{i}.tf(k) - parado{i}.ti(k);
+                        %totparado(j)=0;
+                        %nvezesparado = length(parado{i}.ti);
+                        %for k=1:nvezesparado
+                        %    for l=1:length(tempoareas{i,j}.ti)
+                        %        if parado{i}.ti(k) >= tempoareas{i,j}.ti(l) &&  parado{i}.ti(k) < tempoareas{i,j}.tf(l)
+                        %            totparado(j) = totparado(j) + parado{i}.tf(k) - parado{i}.ti(k);
+                        %        end
+                        %    end
+                        %end
+                        totparado(1)=0; % Inicializa o tempo total parado na área 1 para o animal i
+                        area_atual_idx = 1; % Índice da área atual
+        
+                        % Verifica se há paradas registradas para este animal (i) nesta área (area_atual_idx)
+                        % A contagem já considera apenas paradas com duração >= tmin
+                        if cont_parada_area(i, area_atual_idx) > 0
+                            % Acessa os tempos de início e fim das paradas específicas desta área
+                            % Verifica se os campos .ti e .tf existem na estrutura (boa prática)
+                            if isfield(coord_parada_area{i, area_atual_idx}, 'ti') && isfield(coord_parada_area{i, area_atual_idx}, 'tf')
+                                tempos_inicio_parada_area = coord_parada_area{i, area_atual_idx}.ti;
+                                tempos_fim_parada_area = coord_parada_area{i, area_atual_idx}.tf;
+
+                                % Certifica-se de que os vetores têm o mesmo tamanho e não estão vazios
+                                if ~isempty(tempos_inicio_parada_area) && (length(tempos_inicio_parada_area) == length(tempos_fim_parada_area))
+                                    diferencas_tempo = tempos_fim_parada_area - tempos_inicio_parada_area;
+                                    % Remove NaNs que podem surgir se uma parada não foi corretamente finalizada ou se vetores foram malformados
+                                    diferencas_tempo_validas = diferencas_tempo(~isnan(diferencas_tempo)); 
+                                    totparado(1) = sum(diferencas_tempo_validas); % Soma as durações de todas as paradas válidas na área
                                 end
                             end
                         end
