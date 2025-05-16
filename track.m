@@ -335,6 +335,9 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     indparado_area = zeros(nanimais, nareas);
     contparado_area = zeros(nanimais, nareas);
     parado_area = cell(nanimais, nareas);
+    quadros_fora_area_consecutivos = zeros(nanimais, nareas);
+    min_quadros_fora_area = 3;
+    esta_parado_animal = zeros(nanimais, 1);
     
     %para que todas as areas aparecam na resp, colocar que todos os peixes
     %entraram e sairam no temop zero em cada uma
@@ -769,7 +772,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
 
                     %testa se ficou tempo suficiente parado pra se considerar
                     %que o animal dormiu
-                    if parado{j}.tf(contparado(j)) - parado{j}.ti(contparado(j)) < tminparado
+                    if parado{j}.tf(contparado(j)) - parado{j}.ti(contparado(j)) >= tminparado
                         %copia para e estrutura parado para a estrutura
                         %dormindo
                         contdormindo(j) = contdormindo(j) + 1;
@@ -784,68 +787,131 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
             end
         end
 
-        % Testa, para cada área, se cada animal está dentro verificando os vértices da bounding box
-        alguemdentro = zeros(1, nareas);
-        for k = 1:nareas
-            for j = 1:nanimais
-                % Calcula os vértices da bounding box do animal j.
-                % Supondo que a variável 'caixa(j,:)' está no formato [x, y, width, height]
-                box = caixa(j, :);
-                vx = [box(1), box(1) + box(3), box(1) + box(3), box(1)];
-                vy = [box(2), box(2), box(2) + box(4), box(2) + box(4)];
+        alguemdentro = zeros(1, nareas); % Inicializa para o quadro atual 'cont'
+
+        for k = 1:nareas % Loop para cada área de interesse
+            for j = 1:nanimais % Loop para cada animal
+
+                % 1. Determinar se o animal tem ALGUM VÉRTICE DENTRO da área k NESTE QUADRO (overlap instantâneo)
+                box = caixa(j, :); % Formato [x, y, width, height] do canto superior esquerdo
+                vx = [box(1), box(1) + box(3), box(1) + box(3), box(1)]; % Coordenadas x dos 4 vértices
+                vy = [box(2), box(2), box(2) + box(4), box(2) + box(4)]; % Coordenadas y dos 4 vértices
         
-                % Verifica se pelo menos um vértice está dentro da área de interesse definida pelo polígono
-                insideCorners = inpolygon(vx, vy, areas(k).x, areas(k).y);
-                if any(insideCorners)
-                    dentro = 1;
-                    alguemdentro(k) = 1;
-                    factions(3, k, j, actions, serialcom);
+                is_currently_overlapping_area = any(inpolygon(vx, vy, areas(k).x, areas(k).y));
+
+                % 2. Chamada da função 'factions' e atualização de 'alguemdentro' (baseado no overlap instantâneo)
+                % Esta parte mantém a lógica original de 'factions' e 'alguemdentro'
+                if is_currently_overlapping_area
+                    alguemdentro(k) = 1; % Marca que há pelo menos um animal na área k neste quadro
+                    factions(3, k, j, actions, serialcom); % Código 3: animal (j) tem overlap com área (k)
                 else
-                    dentro = 0;
-                    factions(4, k, j, actions, serialcom);
+                    factions(4, k, j, actions, serialcom); % Código 4: animal (j) NÃO tem overlap com área (k)
                 end
-                
-                % Verifica se está parado dentro da área
-                if pa && dentro
-                    if ~indparado_area(j,k)
-                        indparado_area(j,k) = 1;
-                        contparado_area(j,k) = contparado_area(j,k) + 1;
-                        parado_area{j,k}.ti(contparado_area(j,k)) = t(cont);
-                        parado_area{j,k}.xi(contparado_area(j,k)) = px(j,cont)/pixelcm.x;
-                        parado_area{j,k}.yi(contparado_area(j,k)) = (1 - py(j,cont))/pixelcm.y;
+
+                % 3. Atualizar estado 'dentroarea(j,k)' (ENTRADA/SAÍDA CONFIRMADA da área com filtro de fluttering)
+                %    e registrar tempos em 'tempoareas'
+        
+                if is_currently_overlapping_area
+                    % Animal está sobrepondo a área neste quadro
+                    quadros_fora_area_consecutivos(j,k) = 0; % Reseta o contador de quadros fora
+            
+                    if ~dentroarea(j,k) % Se NÃO estava 'confirmado dentro' da área k antes
+                        % É uma nova ENTRADA CONFIRMADA na área k
+                        dentroarea(j,k) = 1;
+                        contareas(j,k) = contareas(j,k) + 1;
+                        idx_ca = contareas(j,k);
+                        tempoareas{j,k}.ti(idx_ca) = t(cont);
+                        % Assegurar que não há um 'tf' perdido para esta nova entrada
+                        if length(tempoareas{j,k}.tf) >= idx_ca
+                            tempoareas{j,k}.tf(idx_ca) = NaN; 
+                        else
+                            % Se o vetor tf for menor, preencher com NaNs até o índice atual
+                            % Isso pode acontecer se os vetores foram esvaziados e re-preenchidos
+                            tempoareas{j,k}.tf = [tempoareas{j,k}.tf, nan(1, idx_ca - length(tempoareas{j,k}.tf))];
+                        end
                     end
                 else
-                    if indparado_area(j,k)
-                        indparado_area(j,k) = 0;
-                        parado_area{j,k}.tf(contparado_area(j,k)) = t(cont);
-                        parado_area{j,k}.xf(contparado_area(j,k)) = px(j,cont)/pixelcm.x;
-                        parado_area{j,k}.yf(contparado_area(j,k)) = (1 - py(j,cont))/pixelcm.y;
-
-                        % Se o tempo parado dentro da área foi menor que tempmin, descarta
-                        if parado_area{j,k}.tf(contparado_area(j,k)) - parado_area{j,k}.ti(contparado_area(j,k)) < tmin
-                            parado_area{j,k}.ti(contparado_area(j,k)) = [];
-                            parado_area{j,k}.tf(contparado_area(j,k)) = [];
-                            parado_area{j,k}.xi(contparado_area(j,k)) = [];
-                            parado_area{j,k}.yi(contparado_area(j,k)) = [];
-                            parado_area{j,k}.xf(contparado_area(j,k)) = [];
-                            parado_area{j,k}.yf(contparado_area(j,k)) = [];
-                            contparado_area(j,k) = contparado_area(j,k) - 1;
+                    % Animal NÃO está sobrepondo a área neste quadro
+                    if dentroarea(j,k) % Se ESTAVA 'confirmado dentro' da área k antes
+                        quadros_fora_area_consecutivos(j,k) = quadros_fora_area_consecutivos(j,k) + 1;
+                        if quadros_fora_area_consecutivos(j,k) >= min_quadros_fora_area
+                            % É uma nova SAÍDA CONFIRMADA da área k
+                            dentroarea(j,k) = 0;
+                            idx_ca = contareas(j,k);
+                            if idx_ca > 0 % Só registra 'tf' se houve uma entrada correspondente
+                                % Verifica se o ti existe para este índice antes de registrar o tf
+                                if length(tempoareas{j,k}.ti) >= idx_ca && ~isnan(tempoareas{j,k}.ti(idx_ca))
+                                    tempoareas{j,k}.tf(idx_ca) = t(cont);
+                                end
+                            end
                         end
                     end
                 end
 
-                % Atualiza o estado de entrada e saída da área
-                if ~dentroarea(j,k) && dentro
-                    dentroarea(j,k) = 1;
-                    contareas(j,k) = contareas(j,k) + 1;
-                    tempoareas{j,k}.ti(contareas(j,k)) = t(cont);
+                % 4. Lógica de TEMPO PARADO DENTRO DA ÁREA ('parado_area')
+                % Baseada no estado 'esta_parado_animal(j)' (parado individual) e 'dentroarea(j,k)' (confirmado dentro/fora da área)
+
+                % CONDIÇÃO PARA INICIAR uma nova contagem de tempo parado na área:
+                if esta_parado_animal(j) && dentroarea(j,k) && ~indparado_area(j,k)
+                    % Animal está parado (esta_parado_animal(j)==1), E está confirmado dentro da área (dentroarea==1), 
+                    % E não estava já registrado como parado NA ÁREA (~indparado_area==0)
+                    indparado_area(j,k) = 1; % Marca que o animal j está agora parado na área k
+                    contparado_area(j,k) = contparado_area(j,k) + 1;
+                    idx_cpa = contparado_area(j,k);
+            
+                    parado_area{j,k}.ti(idx_cpa) = t(cont);
+                    parado_area{j,k}.xi(idx_cpa) = px(j,cont)/pixelcm.x;
+                    parado_area{j,k}.yi(idx_cpa) = (l - py(j,cont))/pixelcm.y;
+            
+                    % Inicializar tf, xf, yf como NaN para esta nova parada em curso
+                    % Assegurar que os vetores têm tamanho suficiente
+                    if length(parado_area{j,k}.tf) < idx_cpa
+                        parado_area{j,k}.tf = [parado_area{j,k}.tf, nan(1, idx_cpa - length(parado_area{j,k}.tf))];
+                        parado_area{j,k}.xf = [parado_area{j,k}.xf, nan(1, idx_cpa - length(parado_area{j,k}.xf))];
+                        parado_area{j,k}.yf = [parado_area{j,k}.yf, nan(1, idx_cpa - length(parado_area{j,k}.yf))];
+                    end
+                    parado_area{j,k}.tf(idx_cpa) = NaN;
+                    parado_area{j,k}.xf(idx_cpa) = NaN;
+                    parado_area{j,k}.yf(idx_cpa) = NaN;
                 end
-                if dentroarea(j,k) && ~dentro
-                    dentroarea(j,k) = 0;
-                    tempoareas{j,k}.tf(contareas(j,k)) = t(cont);
+
+                % CONDIÇÃO PARA TERMINAR a contagem de tempo parado na área atual:
+                if indparado_area(j,k) && (~esta_parado_animal(j) || ~dentroarea(j,k))
+                    % Estava registrado como parado na área (indparado_area==1), 
+                    % E (animal começou a se mover (esta_parado_animal(j)==0) OU foi confirmado fora da área (dentroarea==0))
+            
+                    indparado_area(j,k) = 0; % Não está mais classificado como parado DENTRO desta área específica
+                    idx_cpa = contparado_area(j,k);
+
+                    if idx_cpa > 0 % Só processa se houver uma parada registrada para finalizar
+                        % Verifica se o ti foi realmente registrado e se tf ainda não foi (é NaN)
+                        if length(parado_area{j,k}.ti) >= idx_cpa && ~isnan(parado_area{j,k}.ti(idx_cpa)) && ...
+                        (length(parado_area{j,k}.tf) < idx_cpa || isnan(parado_area{j,k}.tf(idx_cpa)))
+                    
+                            parado_area{j,k}.tf(idx_cpa) = t(cont);
+                            parado_area{j,k}.xf(idx_cpa) = px(j,cont)/pixelcm.x;
+                            parado_area{j,k}.yf(idx_cpa) = (l - py(j,cont))/pixelcm.y;
+
+                            % Se o tempo parado dentro da área foi menor que tmin, descarta a parada
+                            duracao_parada_area = parado_area{j,k}.tf(idx_cpa) - parado_area{j,k}.ti(idx_cpa);
+                            if duracao_parada_area < tmin
+                                % Remove os dados da última parada na área (a que acabou de ser registrada)
+                                % Esta é a forma mais segura de remover o último elemento se idx_cpa é o contador atual
+                                if idx_cpa == 1 % Se é a única entrada
+                                    parado_area{j,k}.ti = []; parado_area{j,k}.xi = []; parado_area{j,k}.yi = [];
+                                    parado_area{j,k}.tf = []; parado_area{j,k}.xf = []; parado_area{j,k}.yf = [];
+                                else % Se há mais de uma entrada, remove a última
+                                    parado_area{j,k}.ti(idx_cpa) = []; parado_area{j,k}.xi(idx_cpa) = []; parado_area{j,k}.yi(idx_cpa) = [];
+                                    parado_area{j,k}.tf(idx_cpa) = []; parado_area{j,k}.xf(idx_cpa) = []; parado_area{j,k}.yf(idx_cpa) = [];
+                                end
+                                contparado_area(j,k) = contparado_area(j,k) - 1;
+                                if contparado_area(j,k) < 0; contparado_area(j,k) = 0; end % Segurança
+                            end
+                        end
+                    end
                 end
-            end
-        end
+            end % Fim do loop j (animais)
+        end % Fim do loop k (áreas)
 
 
         %para acelerar o funcionamento, so mostra na tela de tempos em
