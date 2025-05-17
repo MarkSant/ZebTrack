@@ -134,24 +134,24 @@ for ne=1:n
                         %        end
                         %    end
                         %end
-                        totparado(1)=0; % Inicializa o tempo total parado na área 1 para o animal i
-                        area_atual_idx = 1; % Índice da área atual
+                        totparado(j)=0; % Inicializa o tempo total parado na área 1 para o animal i
+                        %area_atual_idx = 1; % Índice da área atual
         
                         % Verifica se há paradas registradas para este animal (i) nesta área (area_atual_idx)
                         % A contagem já considera apenas paradas com duração >= tmin
-                        if cont_parada_area(i, area_atual_idx) > 0
+                        if cont_parada_area(i, j) > 0
                             % Acessa os tempos de início e fim das paradas específicas desta área
                             % Verifica se os campos .ti e .tf existem na estrutura (boa prática)
-                            if isfield(coord_parada_area{i, area_atual_idx}, 'ti') && isfield(coord_parada_area{i, area_atual_idx}, 'tf')
-                                tempos_inicio_parada_area = coord_parada_area{i, area_atual_idx}.ti;
-                                tempos_fim_parada_area = coord_parada_area{i, area_atual_idx}.tf;
+                            if isfield(coord_parada_area{i, j}, 'ti') && isfield(coord_parada_area{i, j}, 'tf')
+                                tempos_inicio_parada_area = coord_parada_area{i, j}.ti;
+                                tempos_fim_parada_area = coord_parada_area{i, j}.tf;
 
                                 % Certifica-se de que os vetores têm o mesmo tamanho e não estão vazios
                                 if ~isempty(tempos_inicio_parada_area) && (length(tempos_inicio_parada_area) == length(tempos_fim_parada_area))
                                     diferencas_tempo = tempos_fim_parada_area - tempos_inicio_parada_area;
                                     % Remove NaNs que podem surgir se uma parada não foi corretamente finalizada ou se vetores foram malformados
                                     diferencas_tempo_validas = diferencas_tempo(~isnan(diferencas_tempo)); 
-                                    totparado(1) = sum(diferencas_tempo_validas); % Soma as durações de todas as paradas válidas na área
+                                    totparado(j) = sum(diferencas_tempo_validas); % Soma as durações de todas as paradas válidas na área
                                 end
                             end
                         end

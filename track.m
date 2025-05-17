@@ -335,6 +335,7 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
     indparado_area = zeros(nanimais, nareas);
     contparado_area = zeros(nanimais, nareas);
     parado_area = cell(nanimais, nareas);
+
     quadros_fora_area_consecutivos = zeros(nanimais, nareas);
     min_quadros_fora_area = 3;
     esta_parado_animal = zeros(nanimais, 1);
@@ -717,8 +718,10 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                 vp = sqrt(((px(j,cont)  - px(j,cont-1))/pixelcm.x)^2 + ((py(j,cont) - py(j,cont-1))/pixelcm.y)^2)*fps/procframe;
                 if vp < vmin  %velocida menor que a minima
                     pa = 1;
+                    esta_parado_animal(j)=1;
                 else
                     pa = 0;
+                    esta_parado_animal(j)=0;
                 end
             else
                 pa=0;
@@ -859,11 +862,18 @@ function [t,posicao,velocidade,parado,dormindo,tempoareas,distperc,comportamento
                     indparado_area(j,k) = 1; % Marca que o animal j está agora parado na área k
                     contparado_area(j,k) = contparado_area(j,k) + 1;
                     idx_cpa = contparado_area(j,k);
-            
+                    if isempty(parado_area{j,k}) || ~isfield(parado_area{j,k}, 'tf')
+                    parado_area{j,k}.ti = [];
+                    parado_area{j,k}.tf = [];
+                    parado_area{j,k}.xi = [];
+                    parado_area{j,k}.yi = [];
+                    parado_area{j,k}.xf = [];
+                    parado_area{j,k}.yf = [];
+                    end
                     parado_area{j,k}.ti(idx_cpa) = t(cont);
                     parado_area{j,k}.xi(idx_cpa) = px(j,cont)/pixelcm.x;
                     parado_area{j,k}.yi(idx_cpa) = (l - py(j,cont))/pixelcm.y;
-            
+                    
                     % Inicializar tf, xf, yf como NaN para esta nova parada em curso
                     % Assegurar que os vetores têm tamanho suficiente
                     if length(parado_area{j,k}.tf) < idx_cpa
